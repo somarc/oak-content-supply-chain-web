@@ -10,120 +10,120 @@ function pretty(data) {
 
 function template() {
   return `
-    <section class="ocs-hero">
-      <p class="ocs-kicker">Oak Chain Primitive</p>
-      <h2>Content Supply Chain Interface</h2>
-      <p class="ocs-subtitle">Connect wallet, register ownership, normalize document context, and submit validator proposals.</p>
-      <div class="ocs-pills">
-        <span>Wallet-scoped ownership</span>
-        <span>Provenance envelope</span>
-        <span>Deterministic JCR mapping</span>
-        <span>Validator proposal flow</span>
-      </div>
-    </section>
+    <section class="ocs-shell">
+      <header class="ocs-hero">
+        <p class="ocs-kicker">Oak Content Supply Chain</p>
+        <h2>Drop content. Write once. Move on.</h2>
+        <p class="ocs-subtitle">Connect your wallet, add a document, and let Oak handle provenance, envelopeing, and network commit in one polished flow.</p>
+      </header>
 
-    <section class="ocs-onboard">
-      <div class="ocs-panel ocs-stack">
-        <h3>1) Connect</h3>
-        <label>Wallet (auto-filled after connect)</label>
-        <input data-el="wallet" value="0x742d35Cc6634c0532925a3b844bc9e7595f0beb" />
+      <div class="ocs-grid">
+        <section class="ocs-card ocs-connect">
+          <h3>1) Connect</h3>
+          <p class="ocs-muted">Use your wallet to establish ownership and write rights.</p>
+          <button data-el="connectBtn" class="ocs-btn">Connect Wallet</button>
+          <p data-el="walletPill" class="ocs-pill warn">Not connected</p>
+        </section>
 
-        <label>Validator URL</label>
-        <input data-el="validatorUrl" value="http://127.0.0.1:8090" />
-
-        <label>Normalizer API URL</label>
-        <input data-el="normalizerUrl" value="http://127.0.0.1:8088" />
-
-        <label>Organization</label>
-        <input data-el="org" value="example-org" />
-
-        <details>
-          <summary>Advanced: payment target override</summary>
-          <label>Payment recipient override (optional)</label>
-          <input data-el="paymentRecipientOverride" placeholder="0x... (only if auto-discovery fails)" />
-        </details>
-
-        <div class="ocs-row-btns">
-          <button data-el="connectBtn">Connect Wallet</button>
-          <button data-el="registerBtn" class="secondary">Register with Oak Chain</button>
-        </div>
-
-        <p data-el="status" class="ocs-badge">Ready</p>
-      </div>
-
-      <div class="ocs-panel ocs-stack">
-        <h3>2) Access Gate</h3>
-        <div data-el="modeState" class="ocs-state"><strong>Runtime:</strong> detecting...</div>
-        <div data-el="paymentState" class="ocs-state warn"><strong>Payment Target:</strong> not discovered</div>
-        <div data-el="walletState" class="ocs-state warn"><strong>Wallet:</strong> not connected</div>
-        <div data-el="registrationState" class="ocs-state warn"><strong>Registration:</strong> not registered</div>
-        <pre data-el="registrationResponse">{"status":"not_registered"}</pre>
-        <button data-el="unlockBtn" class="ghost" disabled>Workspace unlocks automatically after successful registration</button>
-      </div>
-    </section>
-
-    <section data-el="workspace" class="ocs-workspace hidden">
-      <div class="ocs-workspace-grid">
-        <div class="ocs-panel ocs-sticky">
-          <h3>Ingestion Workspace</h3>
-
-          <div data-el="drop" class="ocs-drop">
-            <strong>Drag PDF here</strong><br />
-            or click to pick a file
-            <input data-el="file" type="file" accept="application/pdf" style="display:none" />
+        <section class="ocs-card ocs-ingest">
+          <h3>2) Add Content</h3>
+          <div data-el="drop" class="ocs-dropzone">
+            <input data-el="file" type="file" accept="application/pdf" class="ocs-file-input" />
+            <p class="ocs-drop-title">Drag PDF here</p>
+            <p class="ocs-drop-sub">or click to browse</p>
           </div>
+          <p data-el="filePill" class="ocs-pill">No file selected</p>
 
-          <label>Depth</label>
-          <select data-el="depth">
-            <option value="L1">L1 - minimal metadata</option>
-            <option value="L2" selected>L2 - assets + hierarchy</option>
-            <option value="L3">L3 - deep graph</option>
-          </select>
+          <label class="ocs-label" for="ocs-intent">Extraction Intent</label>
+          <div id="ocs-intent" class="ocs-intent">
+            <button type="button" data-intent="quick" class="ocs-intent-btn">Quick</button>
+            <button type="button" data-intent="balanced" class="ocs-intent-btn is-active">Balanced</button>
+            <button type="button" data-intent="deep" class="ocs-intent-btn">Deep</button>
+          </div>
+          <p class="ocs-muted" data-el="intentSummary">Balanced depth with strong metadata and hierarchy extraction.</p>
+        </section>
 
-          <label>Payment Tier</label>
-          <select data-el="paymentTier">
-            <option value="standard" selected>standard</option>
-            <option value="express">express</option>
-            <option value="priority">priority</option>
-          </select>
-
-          <label>Prompt Profile</label>
-          <input data-el="promptProfile" value="assets-metadata-hierarchy" />
-
-          <button data-el="run">Run Normalize + JCR Map</button>
-          <button data-el="quoteBtn" class="secondary" type="button">Get Quote Only</button>
-          <button data-el="submitBtn" class="ghost" type="button">Pay + Sign + Submit Proposal</button>
-
-          <h3>Delete Owned Content</h3>
-          <label>Content Path (must be in your wallet namespace)</label>
-          <input data-el="deletePath" placeholder="/oak-chain/74/2d/35/0x.../example-org/content/documents/doc-id" />
-          <label>Delete Fee Wei</label>
-          <input data-el="deleteFeeWei" value="1000000000000" />
-          <button data-el="deleteBtn" class="secondary" type="button">Pay + Sign + Submit Delete</button>
-        </div>
-
-        <div class="ocs-panel">
-          <div class="ocs-meta" data-el="meta"></div>
-
-          <h3>Envelope JSON</h3>
-          <pre data-el="envelope">{}</pre>
-
-          <h3>JCR Envelope Map</h3>
-          <pre data-el="jcr">{}</pre>
-
-          <h3>Quote</h3>
-          <pre data-el="quote">{}</pre>
-
-          <h3>Proposal Submit</h3>
-          <pre data-el="proposal">{"status":"not_submitted"}</pre>
-
-          <h3>Delete Submit</h3>
-          <pre data-el="deleteResult">{"status":"not_submitted"}</pre>
-        </div>
+        <section class="ocs-card ocs-commit">
+          <h3>3) Write to Oak</h3>
+          <p class="ocs-muted">One action performs pricing, payment authorization, envelope write, and network commit.</p>
+          <div class="ocs-quote">
+            <span>Estimated Cost</span>
+            <strong data-el="quoteLabel">Not estimated yet</strong>
+          </div>
+          <button data-el="writeBtn" class="ocs-btn ocs-btn-primary">Write to Oak</button>
+          <p data-el="status" class="ocs-status">Ready</p>
+        </section>
       </div>
+
+      <section class="ocs-card ocs-progress">
+        <h3>Flow</h3>
+        <ol data-el="steps" class="ocs-steps">
+          <li data-step="connect">Connect wallet</li>
+          <li data-step="register">Prepare workspace</li>
+          <li data-step="extract">Extract and envelope</li>
+          <li data-step="price">Calculate cost</li>
+          <li data-step="commit">Commit write</li>
+          <li data-step="done">Done</li>
+        </ol>
+      </section>
+
+      <section data-el="successCard" class="ocs-card ocs-success hidden">
+        <h3>Write Complete</h3>
+        <p class="ocs-muted">Your content is now committed with provenance. Downstream SEE consumers can react to this write event.</p>
+        <div class="ocs-success-grid">
+          <div>
+            <span>Content ID</span>
+            <code data-el="contentCid">-</code>
+          </div>
+          <div>
+            <span>Transaction</span>
+            <code data-el="txHash">-</code>
+          </div>
+        </div>
+      </section>
+
+      <details class="ocs-dev">
+        <summary>Developer Settings</summary>
+        <div class="ocs-dev-grid">
+          <label>Wallet Override
+            <input data-el="wallet" value="0x742d35Cc6634c0532925a3b844bc9e7595f0beb" />
+          </label>
+          <label>Organization
+            <input data-el="org" value="example-org" />
+          </label>
+          <label>Validator URL
+            <input data-el="validatorUrl" value="http://127.0.0.1:8090" />
+          </label>
+          <label>Normalizer API URL
+            <input data-el="normalizerUrl" value="http://127.0.0.1:8088" />
+          </label>
+          <label>Payment Recipient Override
+            <input data-el="paymentRecipientOverride" placeholder="optional 0x..." />
+          </label>
+        </div>
+        <pre data-el="devOut">{"status":"dev-idle"}</pre>
+      </details>
     </section>
   `;
 }
+
+const INTENTS = {
+  quick: {
+    depth: 'L1',
+    promptProfile: 'metadata-quick',
+    summary: 'Fast pass for minimal metadata and ownership envelopeing.',
+  },
+  balanced: {
+    depth: 'L2',
+    promptProfile: 'assets-metadata-hierarchy',
+    summary: 'Balanced depth with strong metadata and hierarchy extraction.',
+  },
+  deep: {
+    depth: 'L3',
+    promptProfile: 'deep-graph-analysis',
+    summary: 'Deep extraction for richer contextual graph data.',
+  },
+};
 
 export default function decorate(block) {
   block.textContent = '';
@@ -132,68 +132,96 @@ export default function decorate(block) {
   const state = {
     selectedFile: null,
     connectedWallet: null,
-    latestEnvelope: null,
-    latestQuote: null,
     runtimeConfig: { normalizerMode: 'mock', mockWalletFlow: true },
     isRegistered: false,
     discoveredPaymentTarget: null,
+    latestEnvelope: null,
+    latestQuote: null,
+    selectedIntent: 'balanced',
+    busy: false,
   };
 
   const q = (name) => block.querySelector(`[data-el="${name}"]`);
-
   const els = {
+    connectBtn: q('connectBtn'),
+    writeBtn: q('writeBtn'),
+    walletPill: q('walletPill'),
+    filePill: q('filePill'),
+    status: q('status'),
     drop: q('drop'),
     file: q('file'),
-    runBtn: q('run'),
-    quoteBtn: q('quoteBtn'),
-    submitBtn: q('submitBtn'),
-    deleteBtn: q('deleteBtn'),
-    connectBtn: q('connectBtn'),
-    registerBtn: q('registerBtn'),
-    unlockBtn: q('unlockBtn'),
-    status: q('status'),
-    modeState: q('modeState'),
-    paymentState: q('paymentState'),
-    walletState: q('walletState'),
-    registrationState: q('registrationState'),
-    registrationResponse: q('registrationResponse'),
-    workspace: q('workspace'),
-    envelope: q('envelope'),
-    jcr: q('jcr'),
-    quote: q('quote'),
-    proposal: q('proposal'),
-    deleteResult: q('deleteResult'),
-    meta: q('meta'),
+    steps: q('steps'),
+    quoteLabel: q('quoteLabel'),
+    successCard: q('successCard'),
+    contentCid: q('contentCid'),
+    txHash: q('txHash'),
+    intentSummary: q('intentSummary'),
+    devOut: q('devOut'),
     wallet: q('wallet'),
+    org: q('org'),
     validatorUrl: q('validatorUrl'),
     normalizerUrl: q('normalizerUrl'),
-    org: q('org'),
-    depth: q('depth'),
-    promptProfile: q('promptProfile'),
-    paymentTier: q('paymentTier'),
     paymentRecipientOverride: q('paymentRecipientOverride'),
-    deletePath: q('deletePath'),
-    deleteFeeWei: q('deleteFeeWei'),
   };
 
   const setStatus = (msg) => {
     els.status.textContent = msg;
   };
 
-  const setState = (el, label, value, ok) => {
-    el.classList.remove('ok', 'warn');
-    el.classList.add(ok ? 'ok' : 'warn');
-    el.innerHTML = `<strong>${label}:</strong> ${value}`;
+  const setDev = (data) => {
+    els.devOut.textContent = pretty(data);
+  };
+
+  const setBusy = (flag) => {
+    state.busy = flag;
+    els.writeBtn.disabled = flag;
+    els.connectBtn.disabled = flag;
   };
 
   const getNormalizerBase = () => (els.normalizerUrl.value || '').replace(/\/+$/, '');
   const getValidatorBase = () => (els.validatorUrl.value || '').replace(/\/+$/, '');
 
-  const updateGate = () => {
-    setState(els.walletState, 'Wallet', state.connectedWallet || 'not connected', !!state.connectedWallet);
-    setState(els.registrationState, 'Registration', state.isRegistered ? 'registered' : 'not registered', state.isRegistered);
-    els.workspace.classList.toggle('hidden', !state.isRegistered);
-    els.unlockBtn.disabled = !state.isRegistered;
+  const setStep = (name, mode) => {
+    const li = els.steps.querySelector(`[data-step="${name}"]`);
+    if (!li) return;
+    li.classList.remove('is-active', 'is-done', 'is-error');
+    if (mode) li.classList.add(mode);
+  };
+
+  const clearSteps = () => {
+    ['connect', 'register', 'extract', 'price', 'commit', 'done'].forEach((s) => setStep(s, null));
+  };
+
+  const markActive = (name) => {
+    setStep(name, 'is-active');
+  };
+
+  const markDone = (name) => {
+    setStep(name, 'is-done');
+  };
+
+  const markError = (name) => {
+    setStep(name, 'is-error');
+  };
+
+  const updateWalletPill = () => {
+    if (!state.connectedWallet) {
+      els.walletPill.textContent = 'Not connected';
+      els.walletPill.classList.add('warn');
+      return;
+    }
+    const short = `${state.connectedWallet.slice(0, 10)}...${state.connectedWallet.slice(-8)}`;
+    els.walletPill.textContent = `Connected ${short}`;
+    els.walletPill.classList.remove('warn');
+  };
+
+  const updateFilePill = () => {
+    if (!state.selectedFile) {
+      els.filePill.textContent = 'No file selected';
+      return;
+    }
+    const mb = (state.selectedFile.size / (1024 * 1024)).toFixed(2);
+    els.filePill.textContent = `${state.selectedFile.name} (${mb} MB)`;
   };
 
   const getPaymentRecipient = () => {
@@ -205,7 +233,6 @@ export default function decorate(block) {
     const override = (els.paymentRecipientOverride.value || '').trim();
     if (override) {
       state.discoveredPaymentTarget = override;
-      setState(els.paymentState, 'Payment Target', `override ${override}`, true);
       return;
     }
 
@@ -215,39 +242,25 @@ export default function decorate(block) {
       const payload = await res.json();
       const root = payload?.data || payload?.config || payload;
       const candidatePairs = [
-        ['paymentRecipient', root?.paymentRecipient],
-        ['clusterWalletAddress', root?.clusterWalletAddress],
-        ['walletAddress', root?.walletAddress],
-        ['contractAddress', root?.contractAddress],
+        root?.paymentRecipient,
+        root?.clusterWalletAddress,
+        root?.walletAddress,
+        root?.contractAddress,
       ];
-      const hit = candidatePairs.find(([, value]) => value && String(value).startsWith('0x'));
-      if (!hit) throw new Error('payment recipient not present');
-      const [source, value] = hit;
-      state.discoveredPaymentTarget = String(value);
-      const immutable = root?.paymentRecipientImmutable === true ? ' immutable' : '';
-      setState(els.paymentState, 'Payment Target', `auto (${source}${immutable}) ${state.discoveredPaymentTarget}`, true);
+      const hit = candidatePairs.find((value) => value && String(value).startsWith('0x'));
+      state.discoveredPaymentTarget = hit || null;
     } catch (e) {
       state.discoveredPaymentTarget = null;
-      setState(els.paymentState, 'Payment Target', 'not exposed by validator API (use advanced override)', false);
     }
   };
 
   const loadRuntimeConfig = async () => {
     try {
       const res = await fetch(`${getNormalizerBase()}/v1/runtime-config`);
-      if (res.ok) {
-        state.runtimeConfig = await res.json();
-      }
-      els.modeState.innerHTML = `<strong>Runtime:</strong> ${state.runtimeConfig.normalizerMode} (${state.runtimeConfig.mockWalletFlow ? 'mock wallet flow' : 'live wallet flow'})`;
-      els.modeState.classList.add('ok');
-      if (state.runtimeConfig.mockWalletFlow) {
-        els.connectBtn.textContent = 'Mock Wallet Active';
-      } else {
-        els.connectBtn.textContent = 'Connect Wallet';
-      }
+      if (res.ok) state.runtimeConfig = await res.json();
+      setStatus(`Ready (${state.runtimeConfig.normalizerMode} mode)`);
     } catch (e) {
-      els.modeState.innerHTML = '<strong>Runtime:</strong> normalizer unreachable';
-      els.modeState.classList.add('warn');
+      setStatus('Service unavailable. Check API URL in Developer Settings.');
     }
     await discoverPaymentTarget();
   };
@@ -255,20 +268,19 @@ export default function decorate(block) {
   const connectWallet = async () => {
     if (state.runtimeConfig.mockWalletFlow) {
       state.connectedWallet = els.wallet.value;
-      setStatus(`Mock wallet active: ${state.connectedWallet}`);
-      updateGate();
+      updateWalletPill();
       return;
     }
     if (!window.ethereum) throw new Error('MetaMask not detected');
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
     if (!accounts || !accounts.length) throw new Error('No wallet account available');
-    state.connectedWallet = accounts[0];
+    [state.connectedWallet] = accounts;
     els.wallet.value = state.connectedWallet;
-    setStatus(`Wallet connected: ${state.connectedWallet}`);
-    updateGate();
+    updateWalletPill();
   };
 
-  const registerWallet = async () => {
+  const ensureRegistration = async () => {
+    if (state.isRegistered) return;
     const wallet = state.connectedWallet || els.wallet.value;
     if (!wallet || !wallet.startsWith('0x')) throw new Error('Wallet must be a valid 0x address');
 
@@ -292,30 +304,20 @@ export default function decorate(block) {
     } catch {
       payload = { raw };
     }
-
-    els.registrationResponse.textContent = pretty({ status: res.status, response: payload });
+    setDev({ stage: 'register-client', status: res.status, response: payload });
 
     if (!res.ok) {
-      state.isRegistered = false;
-      updateGate();
       throw new Error(payload?.error || payload?.message || `register failed (${res.status})`);
     }
-
     state.isRegistered = true;
-    updateGate();
-    setStatus('Wallet registered with Oak Chain. Workspace unlocked.');
-  };
-
-  const setFile = (file) => {
-    state.selectedFile = file;
-    setStatus(file ? `Selected: ${file.name}` : 'No file selected');
   };
 
   const getQuote = async (sizeBytes) => {
+    const intent = INTENTS[state.selectedIntent];
     const body = {
       wallet: els.wallet.value,
       organization: els.org.value,
-      depth: els.depth.value,
+      depth: intent.depth,
       schemaId: 'schema:doc-envelope',
       schemaVersion: '1.0.0',
       estimatedBytes: sizeBytes,
@@ -328,328 +330,243 @@ export default function decorate(block) {
     });
     if (!res.ok) throw new Error(`quote failed ${res.status}`);
     state.latestQuote = await res.json();
-    els.quote.textContent = pretty(state.latestQuote);
+
+    const wei = state.latestQuote.totalFeeWei;
+    els.quoteLabel.textContent = `${wei} wei`;
     return state.latestQuote;
   };
 
+  const normalizeAndMap = async () => {
+    const intent = INTENTS[state.selectedIntent];
+    const form = new FormData();
+    form.append('file', state.selectedFile);
+    form.append('wallet', els.wallet.value);
+    form.append('organization', els.org.value);
+    form.append('depth', intent.depth);
+    form.append('promptProfile', intent.promptProfile);
+    form.append('schemaId', 'schema:doc-envelope');
+    form.append('schemaVersion', '1.0.0');
+
+    const res = await fetch(`${getNormalizerBase()}/v1/ingress/normalize-upload`, {
+      method: 'POST',
+      body: form,
+    });
+    if (!res.ok) throw new Error(`normalize failed ${res.status}: ${await res.text()}`);
+
+    const normalized = await res.json();
+    state.latestEnvelope = normalized.envelopeDraft;
+
+    const jcrRes = await fetch(`${getNormalizerBase()}/v1/envelopes/jcr-map`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ envelope: normalized.envelopeDraft }),
+    });
+    if (!jcrRes.ok) throw new Error(`jcr map failed ${jcrRes.status}`);
+    const jcrMap = await jcrRes.json();
+
+    setDev({ stage: 'normalize-map', normalized, jcrMap });
+
+    return normalized;
+  };
+
+  const submitWrite = async () => {
+    let wallet;
+    let paymentTx;
+    let signature;
+
+    if (state.runtimeConfig.mockWalletFlow) {
+      wallet = els.wallet.value;
+      if (!wallet || !wallet.startsWith('0x')) throw new Error('Mock wallet must be a 0x address');
+      paymentTx = randomHex(32);
+    } else {
+      if (!window.ethereum) throw new Error('MetaMask not detected');
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      if (!accounts || !accounts.length) throw new Error('No wallet account available');
+      [wallet] = accounts;
+    }
+
+    const paymentRecipient = getPaymentRecipient();
+    if (!paymentRecipient || !paymentRecipient.startsWith('0x')) {
+      throw new Error('Payment recipient unavailable. Set override in Developer Settings.');
+    }
+
+    if (!state.runtimeConfig.mockWalletFlow) {
+      paymentTx = await window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [{
+          from: wallet,
+          to: paymentRecipient,
+          value: `0x${BigInt(state.latestQuote.totalFeeWei).toString(16)}`,
+        }],
+      });
+    }
+
+    const message = JSON.stringify({
+      envelope: state.latestEnvelope,
+      quoteId: state.latestQuote.quoteId,
+      paymentTier: 'standard',
+      timestamp: Date.now(),
+      mode: state.runtimeConfig.mockWalletFlow ? 'mock' : 'live',
+    });
+
+    if (state.runtimeConfig.mockWalletFlow) {
+      signature = randomHex(65);
+    } else {
+      signature = await window.ethereum.request({ method: 'personal_sign', params: [message, wallet] });
+    }
+
+    const form = new URLSearchParams({
+      walletAddress: wallet,
+      message,
+      contentType: 'envelope',
+      paymentTier: 'standard',
+      ethereumTxHash: paymentTx,
+      signature,
+    });
+
+    const res = await fetch(`${getValidatorBase()}/v1/propose-write`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form.toString(),
+    });
+
+    const raw = await res.text();
+    let payload;
+    try {
+      payload = JSON.parse(raw);
+    } catch {
+      payload = { raw };
+    }
+
+    const detail = {
+      stage: 'propose-write',
+      ok: res.ok,
+      status: res.status,
+      validatorUrl: `${getValidatorBase()}/v1/propose-write`,
+      paymentRecipient,
+      ethereumTxHash: paymentTx,
+      signature,
+      response: payload,
+    };
+    setDev(detail);
+
+    if (!res.ok) throw new Error(payload?.error || payload?.message || `validator rejected proposal (${res.status})`);
+
+    return detail;
+  };
+
+  const writeFlow = async () => {
+    if (state.busy) return;
+    if (!state.selectedFile) {
+      setStatus('Add a PDF first');
+      return;
+    }
+
+    clearSteps();
+    setBusy(true);
+    setStatus('Starting flow...');
+
+    try {
+      markActive('connect');
+      if (!state.connectedWallet) await connectWallet();
+      markDone('connect');
+
+      markActive('register');
+      await discoverPaymentTarget();
+      await ensureRegistration();
+      markDone('register');
+
+      markActive('extract');
+      const normalized = await normalizeAndMap();
+      markDone('extract');
+
+      markActive('price');
+      await getQuote(normalized.fileInfo.sizeBytes);
+      markDone('price');
+
+      markActive('commit');
+      const result = await submitWrite();
+      markDone('commit');
+
+      markActive('done');
+      markDone('done');
+      els.successCard.classList.remove('hidden');
+      els.contentCid.textContent = normalized?.fileInfo?.contentCid || '-';
+      els.txHash.textContent = result?.ethereumTxHash || '-';
+      setStatus('Content written to Oak successfully');
+    } catch (e) {
+      const active = els.steps.querySelector('.is-active');
+      if (active) {
+        markError(active.getAttribute('data-step'));
+      }
+      setStatus(`Flow failed: ${e.message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const setIntent = (intent) => {
+    state.selectedIntent = intent;
+    const cfg = INTENTS[intent];
+    els.intentSummary.textContent = cfg.summary;
+    block.querySelectorAll('.ocs-intent-btn').forEach((btn) => {
+      btn.classList.toggle('is-active', btn.getAttribute('data-intent') === intent);
+    });
+  };
+
+  const setFile = (file) => {
+    state.selectedFile = file;
+    updateFilePill();
+  };
+
   els.drop.addEventListener('click', () => els.file.click());
-  els.file.addEventListener('change', () => setFile(els.file.files[0] || null));
   els.drop.addEventListener('dragover', (e) => {
     e.preventDefault();
-    els.drop.classList.add('drag');
+    els.drop.classList.add('is-drag');
   });
-  els.drop.addEventListener('dragleave', () => els.drop.classList.remove('drag'));
+  els.drop.addEventListener('dragleave', () => {
+    els.drop.classList.remove('is-drag');
+  });
   els.drop.addEventListener('drop', (e) => {
     e.preventDefault();
-    els.drop.classList.remove('drag');
+    els.drop.classList.remove('is-drag');
     const [file] = e.dataTransfer.files;
     setFile(file || null);
   });
 
+  els.file.addEventListener('change', () => {
+    setFile(els.file.files[0] || null);
+  });
+
   els.connectBtn.addEventListener('click', async () => {
     try {
+      setStatus('Connecting wallet...');
       await connectWallet();
+      setStatus('Wallet connected');
+      markDone('connect');
     } catch (e) {
-      setStatus(`Wallet connect error: ${e.message}`);
+      setStatus(`Connect failed: ${e.message}`);
+      markError('connect');
     }
   });
 
-  els.registerBtn.addEventListener('click', async () => {
-    try {
-      if (!state.connectedWallet) await connectWallet();
-      await discoverPaymentTarget();
-      setStatus('Registering wallet with validator...');
-      await registerWallet();
-    } catch (e) {
-      setStatus(`Registration error: ${e.message}`);
-    }
+  els.writeBtn.addEventListener('click', writeFlow);
+
+  block.querySelectorAll('.ocs-intent-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      setIntent(btn.getAttribute('data-intent'));
+    });
   });
 
-  els.validatorUrl.addEventListener('change', () => {
-    discoverPaymentTarget();
-  });
-  els.paymentRecipientOverride.addEventListener('change', () => {
-    discoverPaymentTarget();
-  });
-  els.normalizerUrl.addEventListener('change', () => {
-    loadRuntimeConfig();
+  [els.validatorUrl, els.normalizerUrl, els.paymentRecipientOverride].forEach((input) => {
+    input.addEventListener('change', async () => {
+      await loadRuntimeConfig();
+    });
   });
 
-  els.quoteBtn.addEventListener('click', async () => {
-    try {
-      if (!state.isRegistered) throw new Error('Register wallet first');
-      const fallbackSize = state.selectedFile ? state.selectedFile.size : 4096;
-      setStatus('Fetching quote...');
-      await getQuote(fallbackSize);
-      setStatus('Quote ready');
-    } catch (e) {
-      setStatus(`Quote error: ${e.message}`);
-    }
-  });
-
-  els.runBtn.addEventListener('click', async () => {
-    if (!state.isRegistered) {
-      setStatus('Register wallet first');
-      return;
-    }
-    if (!state.selectedFile) {
-      setStatus('Please select a PDF first');
-      return;
-    }
-
-    try {
-      setStatus('Uploading and normalizing...');
-      const form = new FormData();
-      form.append('file', state.selectedFile);
-      form.append('wallet', els.wallet.value);
-      form.append('organization', els.org.value);
-      form.append('depth', els.depth.value);
-      form.append('promptProfile', els.promptProfile.value);
-      form.append('schemaId', 'schema:doc-envelope');
-      form.append('schemaVersion', '1.0.0');
-
-      const res = await fetch(`${getNormalizerBase()}/v1/ingress/normalize-upload`, {
-        method: 'POST',
-        body: form,
-      });
-      if (!res.ok) throw new Error(`normalize failed ${res.status}: ${await res.text()}`);
-      const normalized = await res.json();
-      state.latestEnvelope = normalized.envelopeDraft;
-      els.envelope.textContent = pretty(normalized.envelopeDraft);
-
-      els.meta.innerHTML = '';
-      const items = [
-        ['confidence', normalized.confidence],
-        ['depth', normalized.costProfile.depth],
-        ['multiplier', normalized.costProfile.multiplier],
-        ['contentCid', normalized.fileInfo.contentCid],
-        ['sizeBytes', normalized.fileInfo.sizeBytes],
-        ['sha256', normalized.fileInfo.sha256],
-      ];
-      items.forEach(([k, v]) => {
-        const div = document.createElement('div');
-        div.className = 'ocs-kv';
-        div.textContent = `${k}: ${v}`;
-        els.meta.appendChild(div);
-      });
-
-      setStatus('Mapping JCR envelope...');
-      const jcrRes = await fetch(`${getNormalizerBase()}/v1/envelopes/jcr-map`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ envelope: normalized.envelopeDraft }),
-      });
-      if (!jcrRes.ok) throw new Error(`jcr map failed ${jcrRes.status}`);
-      els.jcr.textContent = pretty(await jcrRes.json());
-
-      setStatus('Fetching quote...');
-      await getQuote(normalized.fileInfo.sizeBytes);
-      setStatus('Complete: envelope + JCR map + quote ready');
-    } catch (e) {
-      setStatus(`Error: ${e.message}`);
-    }
-  });
-
-  els.submitBtn.addEventListener('click', async () => {
-    let submitContext = {};
-    try {
-      if (!state.isRegistered) throw new Error('Register wallet first');
-      if (!state.latestEnvelope) throw new Error('Run Normalize + JCR Map first');
-      if (!state.latestQuote) throw new Error('Generate quote first');
-
-      let wallet;
-      let paymentTx;
-      let signature;
-
-      if (state.runtimeConfig.mockWalletFlow) {
-        wallet = els.wallet.value;
-        if (!wallet || !wallet.startsWith('0x')) throw new Error('Mock wallet must be a 0x address');
-        paymentTx = randomHex(32);
-      } else {
-        if (!window.ethereum) throw new Error('MetaMask not detected');
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        if (!accounts || !accounts.length) throw new Error('No wallet account available');
-        [wallet] = accounts;
-      }
-
-      const paymentRecipient = getPaymentRecipient();
-      const paymentTier = els.paymentTier.value;
-
-      if (!paymentRecipient || !paymentRecipient.startsWith('0x')) {
-        throw new Error('Payment recipient unavailable. Ensure /v1/blockchain/config exposes payment recipient or set override.');
-      }
-
-      if (!state.runtimeConfig.mockWalletFlow) {
-        setStatus('Submitting payment transaction in MetaMask...');
-        paymentTx = await window.ethereum.request({
-          method: 'eth_sendTransaction',
-          params: [{
-            from: wallet,
-            to: paymentRecipient,
-            value: `0x${BigInt(state.latestQuote.totalFeeWei).toString(16)}`,
-          }],
-        });
-      }
-
-      const message = JSON.stringify({
-        envelope: state.latestEnvelope,
-        quoteId: state.latestQuote.quoteId,
-        paymentTier,
-        timestamp: Date.now(),
-        mode: state.runtimeConfig.mockWalletFlow ? 'mock' : 'live',
-      });
-
-      if (state.runtimeConfig.mockWalletFlow) {
-        signature = randomHex(65);
-      } else {
-        setStatus('Signing proposal payload...');
-        signature = await window.ethereum.request({ method: 'personal_sign', params: [message, wallet] });
-      }
-
-      setStatus('Submitting proposal to validator...');
-      const form = new URLSearchParams({
-        walletAddress: wallet,
-        message,
-        contentType: 'envelope',
-        paymentTier,
-        ethereumTxHash: paymentTx,
-        signature,
-      });
-
-      const res = await fetch(`${getValidatorBase()}/v1/propose-write`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: form.toString(),
-      });
-
-      const raw = await res.text();
-      let payload;
-      try {
-        payload = JSON.parse(raw);
-      } catch {
-        payload = { raw };
-      }
-
-      submitContext = {
-        ok: res.ok,
-        status: res.status,
-        mode: state.runtimeConfig.mockWalletFlow ? 'mock' : 'live',
-        validatorUrl: `${getValidatorBase()}/v1/propose-write`,
-        paymentRecipient,
-        ethereumTxHash: paymentTx,
-        signature,
-        response: payload,
-      };
-      els.proposal.textContent = pretty(submitContext);
-
-      if (!res.ok) throw new Error(payload?.error || payload?.message || `validator rejected proposal (${res.status})`);
-      setStatus('Proposal submitted successfully');
-    } catch (e) {
-      els.proposal.textContent = pretty({ ...submitContext, ok: false, error: String(e) });
-      setStatus(`Submit error: ${e.message}`);
-    }
-  });
-
-  els.deleteBtn.addEventListener('click', async () => {
-    let submitContext = {};
-    try {
-      if (!state.isRegistered) throw new Error('Register wallet first');
-
-      const contentPath = (els.deletePath.value || '').trim();
-      const paymentRecipient = getPaymentRecipient();
-      const deleteFeeWei = (els.deleteFeeWei.value || '').trim();
-      if (!contentPath) throw new Error('Enter content path to delete');
-      if (!paymentRecipient || !paymentRecipient.startsWith('0x')) {
-        throw new Error('Payment recipient unavailable. Ensure /v1/blockchain/config exposes payment recipient or set override.');
-      }
-      if (!/^\d+$/.test(deleteFeeWei)) throw new Error('Delete fee must be integer wei');
-
-      let wallet;
-      let paymentTx;
-      let signature;
-
-      if (state.runtimeConfig.mockWalletFlow) {
-        wallet = els.wallet.value;
-        if (!wallet || !wallet.startsWith('0x')) throw new Error('Mock wallet must be a 0x address');
-        paymentTx = randomHex(32);
-      } else {
-        if (!window.ethereum) throw new Error('MetaMask not detected');
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        if (!accounts || !accounts.length) throw new Error('No wallet account available');
-        [wallet] = accounts;
-      }
-
-      if (!state.runtimeConfig.mockWalletFlow) {
-        setStatus('Submitting delete payment transaction in MetaMask...');
-        paymentTx = await window.ethereum.request({
-          method: 'eth_sendTransaction',
-          params: [{
-            from: wallet,
-            to: paymentRecipient,
-            value: `0x${BigInt(deleteFeeWei).toString(16)}`,
-          }],
-        });
-      }
-
-      const deleteMessage = JSON.stringify({
-        action: 'delete',
-        contentPath,
-        timestamp: Date.now(),
-        mode: state.runtimeConfig.mockWalletFlow ? 'mock' : 'live',
-      });
-
-      if (state.runtimeConfig.mockWalletFlow) {
-        signature = randomHex(65);
-      } else {
-        setStatus('Signing delete payload...');
-        signature = await window.ethereum.request({ method: 'personal_sign', params: [deleteMessage, wallet] });
-      }
-
-      setStatus('Submitting delete proposal to validator...');
-      const clientId = `oak-supply-chain-${wallet.slice(2, 10)}`;
-      const form = new URLSearchParams({
-        walletAddress: wallet,
-        contentPath,
-        ethereumTxHash: paymentTx,
-        signature,
-        clientId,
-      });
-
-      const res = await fetch(`${getValidatorBase()}/v1/propose-delete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: form.toString(),
-      });
-
-      const raw = await res.text();
-      let payload;
-      try {
-        payload = JSON.parse(raw);
-      } catch {
-        payload = { raw };
-      }
-
-      submitContext = {
-        ok: res.ok,
-        status: res.status,
-        mode: state.runtimeConfig.mockWalletFlow ? 'mock' : 'live',
-        validatorUrl: `${getValidatorBase()}/v1/propose-delete`,
-        paymentRecipient,
-        contentPath,
-        ethereumTxHash: paymentTx,
-        signature,
-        response: payload,
-      };
-      els.deleteResult.textContent = pretty(submitContext);
-
-      if (!res.ok) throw new Error(payload?.error || payload?.message || `validator rejected delete (${res.status})`);
-      setStatus('Delete proposal submitted successfully');
-    } catch (e) {
-      els.deleteResult.textContent = pretty({ ...submitContext, ok: false, error: String(e) });
-      setStatus(`Delete error: ${e.message}`);
-    }
-  });
-
+  clearSteps();
+  updateWalletPill();
+  updateFilePill();
+  setIntent(state.selectedIntent);
   loadRuntimeConfig();
-  updateGate();
 }
