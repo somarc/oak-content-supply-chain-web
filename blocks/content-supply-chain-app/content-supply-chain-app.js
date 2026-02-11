@@ -8,6 +8,16 @@ function pretty(data) {
   return JSON.stringify(data, null, 2);
 }
 
+function normalizeAddress(raw) {
+  const value = String(raw || '').trim();
+  const match = value.match(/0x[a-fA-F0-9]{40}/);
+  return match ? match[0] : value;
+}
+
+function isValidAddress(value) {
+  return /^0x[a-fA-F0-9]{40}$/.test(String(value || '').trim());
+}
+
 function template() {
   return `
     <section class="ocs-shell">
@@ -244,6 +254,16 @@ export default function decorate(block) {
     return override || state.discoveredPaymentTarget;
   };
 
+  const resolveWallet = () => {
+    const candidate = normalizeAddress(state.connectedWallet || els.wallet.value);
+    if (!isValidAddress(candidate)) {
+      throw new Error('Wallet address is invalid. Open Developer Settings and use a full 0x...40-hex wallet value.');
+    }
+    els.wallet.value = candidate;
+    state.connectedWallet = candidate;
+    return candidate;
+  };
+
   const discoverPaymentTarget = async () => {
     const override = (els.paymentRecipientOverride.value || '').trim();
     if (override) {
@@ -283,7 +303,12 @@ export default function decorate(block) {
 
   const connectWallet = async () => {
     if (state.runtimeConfig.mockWalletFlow) {
-      state.connectedWallet = els.wallet.value;
+      const candidate = normalizeAddress(els.wallet.value);
+      if (!isValidAddress(candidate)) {
+        throw new Error('Mock wallet must be a full 0x...40-hex address.');
+      }
+      state.connectedWallet = candidate;
+      els.wallet.value = candidate;
       updateWalletPill();
       return;
     }
@@ -291,14 +316,15 @@ export default function decorate(block) {
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
     if (!accounts || !accounts.length) throw new Error('No wallet account available');
     [state.connectedWallet] = accounts;
+    state.connectedWallet = normalizeAddress(state.connectedWallet);
+    if (!isValidAddress(state.connectedWallet)) throw new Error('Connected wallet address is invalid.');
     els.wallet.value = state.connectedWallet;
     updateWalletPill();
   };
 
   const ensureRegistration = async () => {
     if (state.isRegistered) return;
-    const wallet = state.connectedWallet || els.wallet.value;
-    if (!wallet || !wallet.startsWith('0x')) throw new Error('Wallet must be a valid 0x address');
+    const wallet = resolveWallet();
 
     const clientId = `oak-supply-chain-${wallet.slice(2, 10)}`;
     const form = new URLSearchParams({
@@ -335,8 +361,9 @@ export default function decorate(block) {
 
   const getQuote = async (sizeBytes) => {
     const intent = INTENTS[state.selectedIntent];
+    const wallet = resolveWallet();
     const body = {
-      wallet: els.wallet.value,
+      wallet,
       organization: els.org.value,
       depth: intent.depth,
       schemaId: 'schema:doc-envelope',
@@ -359,9 +386,10 @@ export default function decorate(block) {
 
   const normalizeAndMap = async () => {
     const intent = INTENTS[state.selectedIntent];
+    const wallet = resolveWallet();
     const form = new FormData();
     form.append('file', state.selectedFile);
-    form.append('wallet', els.wallet.value);
+    form.append('wallet', wallet);
     form.append('organization', els.org.value);
     form.append('depth', intent.depth);
     form.append('promptProfile', intent.promptProfile);
@@ -396,14 +424,17 @@ export default function decorate(block) {
     let signature;
 
     if (state.runtimeConfig.mockWalletFlow) {
-      wallet = els.wallet.value;
-      if (!wallet || !wallet.startsWith('0x')) throw new Error('Mock wallet must be a 0x address');
+      wallet = resolveWallet();
       paymentTx = randomHex(32);
     } else {
       if (!window.ethereum) throw new Error('MetaMask not detected');
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       if (!accounts || !accounts.length) throw new Error('No wallet account available');
       [wallet] = accounts;
+      wallet = normalizeAddress(wallet);
+      if (!isValidAddress(wallet)) throw new Error('Connected wallet address is invalid.');
+      els.wallet.value = wallet;
+      state.connectedWallet = wallet;
     }
 
     const paymentRecipient = getPaymentRecipient();
