@@ -18,6 +18,32 @@ function isValidAddress(value) {
   return /^0x[a-fA-F0-9]{40}$/.test(String(value || '').trim());
 }
 
+function buildUrl(base, path) {
+  const cleanBase = String(base || '').replace(/\/+$/, '');
+  const cleanPath = String(path || '').replace(/^\/+/, '');
+  return `${cleanBase}/${cleanPath}`;
+}
+
+function inferNetworkName(config) {
+  const candidate = String(
+    config?.network
+    || config?.ethereumNetwork
+    || config?.chain
+    || config?.chainName
+    || '',
+  ).toLowerCase();
+  if (candidate.includes('sepolia')) return 'sepolia';
+  if (candidate.includes('main')) return 'mainnet';
+  return 'unknown';
+}
+
+function etherscanTxUrl(network, txHash) {
+  if (!/^0x[a-fA-F0-9]{64}$/.test(String(txHash || ''))) return null;
+  if (network === 'sepolia') return `https://sepolia.etherscan.io/tx/${txHash}`;
+  if (network === 'mainnet') return `https://etherscan.io/tx/${txHash}`;
+  return `https://etherscan.io/tx/${txHash}`;
+}
+
 function template() {
   return `
     <section class="ocs-shell">
@@ -74,6 +100,11 @@ function template() {
       <section data-el="successCard" class="ocs-card ocs-success hidden">
         <h3>Write Complete</h3>
         <p class="ocs-muted">Your content is now committed with provenance. Downstream SEE consumers can react to this write event.</p>
+        <div class="ocs-success-links">
+          <a data-el="txLink" target="_blank" rel="noreferrer">View transaction</a>
+          <a data-el="statusLink" target="_blank" rel="noreferrer">Track write status</a>
+        </div>
+        <p data-el="writeState" class="ocs-success-state">Write finalized.</p>
         <div class="ocs-success-grid">
           <div>
             <span>Content ID</span>
@@ -143,6 +174,8 @@ export default function decorate(block) {
     latestQuote: null,
     selectedIntent: 'balanced',
     busy: false,
+    blockchainConfig: null,
+    statusPollTimer: null,
   };
 
   const q = (name) => block.querySelector(`[data-el="${name}"]`);
@@ -159,6 +192,9 @@ export default function decorate(block) {
     successCard: q('successCard'),
     contentCid: q('contentCid'),
     txHash: q('txHash'),
+    txLink: q('txLink'),
+    statusLink: q('statusLink'),
+    writeState: q('writeState'),
     intentSummary: q('intentSummary'),
     devOut: q('devOut'),
     wallet: q('wallet'),
@@ -276,6 +312,7 @@ export default function decorate(block) {
       if (!res.ok) throw new Error(`config ${res.status}`);
       const payload = await res.json();
       const root = payload?.data || payload?.config || payload;
+      state.blockchainConfig = root;
       const candidatePairs = [
         root?.paymentRecipient,
         root?.clusterWalletAddress,
@@ -285,6 +322,7 @@ export default function decorate(block) {
       const hit = candidatePairs.find((value) => value && String(value).startsWith('0x'));
       state.discoveredPaymentTarget = hit || null;
     } catch (e) {
+      state.blockchainConfig = null;
       state.discoveredPaymentTarget = null;
     }
   };
@@ -499,6 +537,7 @@ export default function decorate(block) {
       stage: 'propose-write',
       ok: res.ok,
       status: res.status,
+      proposalId: payload?.proposalId || payload?.data?.proposalId || payload?.id || null,
       validatorUrl: `${getValidatorBase()}/v1/propose-write`,
       paymentRecipient,
       ethereumTxHash: paymentTx,
@@ -510,6 +549,37 @@ export default function decorate(block) {
     if (!res.ok) throw new Error(payload?.error || payload?.message || `validator rejected proposal (${res.status})`);
 
     return detail;
+  };
+
+  const stopStatusPolling = () => {
+    if (state.statusPollTimer) {
+      window.clearInterval(state.statusPollTimer);
+      state.statusPollTimer = null;
+    }
+  };
+
+  const startStatusPolling = (proposalId) => {
+    stopStatusPolling();
+    if (!proposalId) return;
+    const statusUrl = buildUrl(getValidatorBase(), `/v1/proposals/${proposalId}/status`);
+    let attempts = 0;
+    state.statusPollTimer = window.setInterval(async () => {
+      attempts += 1;
+      try {
+        const res = await fetch(statusUrl);
+        if (!res.ok) return;
+        const payload = await res.json();
+        const root = payload?.data || payload;
+        const phase = root?.status || root?.state || 'processing';
+        els.writeState.textContent = `Write status: ${phase}`;
+        if (/final|committed|done|complete/i.test(String(phase))) {
+          stopStatusPolling();
+        }
+      } catch (_) {
+        // keep prior state text
+      }
+      if (attempts >= 20) stopStatusPolling();
+    }, 3000);
   };
 
   const writeFlow = async () => {
@@ -550,8 +620,27 @@ export default function decorate(block) {
       els.successCard.classList.remove('hidden');
       els.contentCid.textContent = normalized?.fileInfo?.contentCid || '-';
       els.txHash.textContent = result?.ethereumTxHash || '-';
+      const network = state.runtimeConfig.mockWalletFlow ? 'mock' : inferNetworkName(state.blockchainConfig);
+      const txUrl = etherscanTxUrl(network, result?.ethereumTxHash);
+      if (txUrl && !state.runtimeConfig.mockWalletFlow) {
+        els.txLink.href = txUrl;
+        els.txLink.textContent = network === 'sepolia' ? 'View transaction (Sepolia Etherscan)' : 'View transaction (Etherscan)';
+        els.txLink.classList.remove('is-disabled');
+      } else {
+        els.txLink.removeAttribute('href');
+        els.txLink.textContent = 'Demo receipt (mock mode)';
+        els.txLink.classList.add('is-disabled');
+      }
+      const proposalStatusUrl = result?.proposalId
+        ? buildUrl(getValidatorBase(), `/v1/proposals/${result.proposalId}/status`)
+        : buildUrl(getValidatorBase(), '/v1/proposals/queue/stats');
+      els.statusLink.href = proposalStatusUrl;
+      els.statusLink.textContent = result?.proposalId ? 'Track write status' : 'View queue insights';
+      els.writeState.textContent = result?.proposalId ? `Write accepted. Proposal ID: ${result.proposalId}` : 'Write accepted. Tracking by queue insights.';
+      startStatusPolling(result?.proposalId);
       setStatus('Content written to Oak successfully');
     } catch (e) {
+      stopStatusPolling();
       const active = els.steps.querySelector('.is-active');
       const activeStep = active ? active.getAttribute('data-step') : '';
       if (active) {
@@ -629,6 +718,7 @@ export default function decorate(block) {
 
   [els.validatorUrl, els.normalizerUrl, els.paymentRecipientOverride].forEach((input) => {
     input.addEventListener('change', async () => {
+      stopStatusPolling();
       await loadRuntimeConfig();
     });
   });
