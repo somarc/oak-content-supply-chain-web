@@ -305,7 +305,12 @@ export default function decorate(block) {
     if (state.runtimeConfig.mockWalletFlow) {
       const candidate = normalizeAddress(els.wallet.value);
       if (!isValidAddress(candidate)) {
-        throw new Error('Mock wallet must be a full 0x...40-hex address.');
+        const generated = randomHex(20);
+        state.connectedWallet = generated;
+        els.wallet.value = generated;
+        updateWalletPill();
+        setStatus('Mock wallet generated for demo flow');
+        return;
       }
       state.connectedWallet = candidate;
       els.wallet.value = candidate;
