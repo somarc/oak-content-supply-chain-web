@@ -21,51 +21,8 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 20px 44px rgba(0, 0, 0, 0.28);
 }
 
-.content-supply-chain-app .ocs-hero {
-  position: relative;
-  overflow: hidden;
-  border-radius: 16px;
-  border: 1px solid rgba(98, 126, 234, 0.32);
-  padding: 1.15rem 1.1rem 1.35rem;
-  background: linear-gradient(180deg, rgba(16, 31, 66, 0.96), rgba(18, 34, 72, 0.9));
-}
-
-.content-supply-chain-app .ocs-hero::after {
-  content: '';
-  position: absolute;
-  width: 220px;
-  height: 220px;
-  right: -50px;
-  top: -40px;
-  border-radius: 50%;
-  pointer-events: none;
-  background: radial-gradient(circle, rgba(34, 211, 238, 0.22), transparent 62%);
-}
-
-.content-supply-chain-app .ocs-kicker {
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.75rem;
-  color: var(--ocs-muted);
-}
-
-.content-supply-chain-app h2 {
-  margin: 0.26rem 0 0;
-  font-size: clamp(1.65rem, 2.1vw, 2.25rem);
-  letter-spacing: 0.01em;
-  line-height: 1.15;
-}
-
-.content-supply-chain-app .ocs-subtitle {
-  margin: 0.62rem 0 0;
-  color: var(--ocs-muted);
-  max-width: 900px;
-  line-height: 1.4;
-}
-
 .content-supply-chain-app .ocs-grid {
-  margin-top: 1.2rem;
+  margin-top: 0.1rem;
   display: grid;
   gap: 1.2rem;
   grid-template-columns: repeat(3, minmax(0, 1fr));

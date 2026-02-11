@@ -11,12 +11,6 @@ function pretty(data) {
 function template() {
   return `
     <section class="ocs-shell">
-      <header class="ocs-hero">
-        <p class="ocs-kicker">Oak Content Supply Chain</p>
-        <h2>Drop content. Write once. Move on.</h2>
-        <p class="ocs-subtitle">Connect your wallet, add a document, and let Oak handle provenance, envelopeing, and network commit in one polished flow.</p>
-      </header>
-
       <div class="ocs-grid">
         <section class="ocs-card ocs-connect">
           <h3>1) Connect</h3>
