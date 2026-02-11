@@ -577,7 +577,18 @@ export default function decorate(block) {
     updateFilePill();
   };
 
-  els.drop.addEventListener('click', () => els.file.click());
+  els.drop.addEventListener('click', (event) => {
+    if (event.target === els.file) return;
+    try {
+      if (typeof els.file.showPicker === 'function') {
+        els.file.showPicker();
+      } else {
+        els.file.click();
+      }
+    } catch (_) {
+      els.file.click();
+    }
+  });
   els.drop.addEventListener('dragover', (e) => {
     e.preventDefault();
     els.drop.classList.add('is-drag');
