@@ -22,8 +22,8 @@ function template() {
         <section class="ocs-card ocs-ingest">
           <h3>2) Add Content</h3>
           <div data-el="drop" class="ocs-dropzone">
-            <input data-el="file" type="file" accept="application/pdf" class="ocs-file-input" />
-            <p class="ocs-drop-title">Drag PDF here</p>
+            <input data-el="file" type="file" class="ocs-file-input" />
+            <p class="ocs-drop-title">Drag file here</p>
             <p class="ocs-drop-sub">or click to browse</p>
           </div>
           <p data-el="filePill" class="ocs-pill">No file selected</p>
@@ -53,9 +53,9 @@ function template() {
         <h3>Flow</h3>
         <ol data-el="steps" class="ocs-steps">
           <li data-step="connect">Connect wallet</li>
-          <li data-step="register">Prepare workspace</li>
+          <li data-step="register">Prepare write session</li>
           <li data-step="extract">Extract and envelope</li>
-          <li data-step="price">Calculate cost</li>
+          <li data-step="price">Estimate cost</li>
           <li data-step="commit">Commit write</li>
           <li data-step="done">Done</li>
         </ol>
@@ -174,6 +174,27 @@ export default function decorate(block) {
 
   const getNormalizerBase = () => (els.normalizerUrl.value || '').replace(/\/+$/, '');
   const getValidatorBase = () => (els.validatorUrl.value || '').replace(/\/+$/, '');
+  const isHosted = () => /\.aem\.(page|live)$/i.test(window.location.hostname);
+  const isLocalEndpoint = (url) => /127\.0\.0\.1|localhost/i.test(url || '');
+  const endpointHint = () => {
+    if (isHosted() && (isLocalEndpoint(getNormalizerBase()) || isLocalEndpoint(getValidatorBase()))) {
+      return 'Open Developer Settings and use a public service endpoint (tunnel URL), not localhost.';
+    }
+    return null;
+  };
+  const isNetworkError = (error) => /failed to fetch|networkerror|load failed|network request failed/i.test(
+    String(error?.message || error),
+  );
+  const formatFlowError = (step, error) => {
+    const hint = endpointHint();
+    if (hint && isNetworkError(error)) return `Cannot reach Oak services from this hosted page. ${hint}`;
+    if (step === 'register' && isNetworkError(error)) return `Could not prepare your write session. ${hint || 'Check service connectivity in Developer Settings.'}`;
+    if (step === 'extract' && /415|unsupported|mime|content type/i.test(String(error?.message || error))) {
+      return 'This file type is not supported for semantic extraction yet. For now, use PDF.';
+    }
+    if (isNetworkError(error)) return `Service connection issue. ${hint || 'Check service URLs in Developer Settings.'}`;
+    return error?.message || String(error);
+  };
 
   const setStep = (name, mode) => {
     const li = els.steps.querySelector(`[data-step="${name}"]`);
@@ -254,7 +275,8 @@ export default function decorate(block) {
       if (res.ok) state.runtimeConfig = await res.json();
       setStatus(`Ready (${state.runtimeConfig.normalizerMode} mode)`);
     } catch (e) {
-      setStatus('Service unavailable. Check API URL in Developer Settings.');
+      const hint = endpointHint();
+      setStatus(hint ? `Service unavailable. ${hint}` : 'Service unavailable. Check API URL in Developer Settings.');
     }
     await discoverPaymentTarget();
   };
@@ -285,11 +307,16 @@ export default function decorate(block) {
       clientUrl: window.location.origin,
     });
 
-    const res = await fetch(`${getValidatorBase()}/v1/register-client`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: form.toString(),
-    });
+    let res;
+    try {
+      res = await fetch(`${getValidatorBase()}/v1/register-client`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: form.toString(),
+      });
+    } catch (error) {
+      throw new Error(formatFlowError('register', error));
+    }
 
     const raw = await res.text();
     let payload;
@@ -452,7 +479,7 @@ export default function decorate(block) {
   const writeFlow = async () => {
     if (state.busy) return;
     if (!state.selectedFile) {
-      setStatus('Add a PDF first');
+      setStatus('Add a file first');
       return;
     }
 
@@ -490,10 +517,11 @@ export default function decorate(block) {
       setStatus('Content written to Oak successfully');
     } catch (e) {
       const active = els.steps.querySelector('.is-active');
+      const activeStep = active ? active.getAttribute('data-step') : '';
       if (active) {
-        markError(active.getAttribute('data-step'));
+        markError(activeStep);
       }
-      setStatus(`Flow failed: ${e.message}`);
+      setStatus(formatFlowError(activeStep, e));
     } finally {
       setBusy(false);
     }

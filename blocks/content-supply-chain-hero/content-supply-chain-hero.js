@@ -9,7 +9,7 @@ export default function decorate(block) {
   const rows = readRows(block);
   const kicker = rows[0]?.[0] || 'Oak Content Supply Chain';
   const title = rows[1]?.[0] || 'Drop content. Write once. Move on.';
-  const subtitle = rows[2]?.[0] || 'Connect your wallet, add a document, and let Oak handle provenance, envelopeing, and network commit in one polished flow.';
+  const subtitle = rows[2]?.[0] || 'Connect your wallet, add a document, and let Oak handle provenance, enveloping, and network commit in one polished flow.';
   const pillsRaw = rows[3]?.[0] || 'Wallet-scoped ownership, Provenance envelope, Deterministic JCR mapping, Validator proposal flow';
   const pills = pillsRaw.split(',').map((v) => v.trim()).filter(Boolean);
 
