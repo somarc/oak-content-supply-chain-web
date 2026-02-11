@@ -13,7 +13,7 @@
 .content-supply-chain-app .ocs-shell {
   border-radius: 20px;
   border: 1px solid var(--ocs-border);
-  padding: 1.15rem;
+  padding: 1.2rem;
   background:
     radial-gradient(circle at 12% 15%, rgba(34, 211, 238, 0.09), transparent 34%),
     radial-gradient(circle at 86% 84%, rgba(124, 58, 237, 0.09), transparent 42%),
@@ -26,7 +26,7 @@
   overflow: hidden;
   border-radius: 16px;
   border: 1px solid rgba(98, 126, 234, 0.32);
-  padding: 1.3rem 1.25rem 1.45rem;
+  padding: 1.15rem 1.1rem 1.35rem;
   background: linear-gradient(180deg, rgba(16, 31, 66, 0.96), rgba(18, 34, 72, 0.9));
 }
 
@@ -51,50 +51,52 @@
 }
 
 .content-supply-chain-app h2 {
-  margin: 0.3rem 0 0;
-  font-size: clamp(1.8rem, 2.2vw, 2.6rem);
+  margin: 0.26rem 0 0;
+  font-size: clamp(1.65rem, 2.1vw, 2.25rem);
   letter-spacing: 0.01em;
+  line-height: 1.15;
 }
 
 .content-supply-chain-app .ocs-subtitle {
-  margin: 0.7rem 0 0.15rem;
+  margin: 0.62rem 0 0;
   color: var(--ocs-muted);
   max-width: 900px;
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
 .content-supply-chain-app .ocs-grid {
   margin-top: 1.2rem;
   display: grid;
-  gap: 1.1rem;
+  gap: 1.2rem;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
 }
 
 .content-supply-chain-app .ocs-card {
   border-radius: 14px;
   border: 1px solid var(--ocs-border);
   background: var(--ocs-card-bg);
-  padding: 1.05rem;
+  padding: 0.95rem;
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
 }
 
 .content-supply-chain-app .ocs-card h3 {
   margin: 0;
-  font-size: 1.95rem;
+  font-size: 1.08rem;
   letter-spacing: 0.01em;
 }
 
 .content-supply-chain-app .ocs-muted {
-  margin: 0.55rem 0 0.95rem;
+  margin: 0.42rem 0 0.8rem;
   color: var(--ocs-muted);
-  line-height: 1.42;
+  line-height: 1.36;
 }
 
 .content-supply-chain-app .ocs-btn {
   width: 100%;
   border: 1px solid rgba(124, 169, 255, 0.28);
   border-radius: 10px;
-  padding: 0.66rem 0.8rem;
+  padding: 0.58rem 0.74rem;
   font: inherit;
   font-weight: 700;
   background: linear-gradient(90deg, var(--ocs-accent-a), var(--ocs-accent-b));
@@ -120,7 +122,7 @@
 }
 
 .content-supply-chain-app .ocs-pill {
-  margin: 0.8rem 0 0;
+  margin: 0.68rem 0 0;
   display: inline-block;
   padding: 0.38rem 0.74rem;
   border-radius: 999px;
@@ -139,7 +141,7 @@
   position: relative;
   border: 2px dashed rgba(34, 211, 238, 0.74);
   border-radius: 12px;
-  padding: 1.25rem;
+  padding: 1rem;
   text-align: center;
   background:
     radial-gradient(circle at 12% 20%, rgba(34, 211, 238, 0.12), transparent 42%),
@@ -175,8 +177,8 @@
 
 .content-supply-chain-app .ocs-label {
   display: block;
-  margin-top: 0.9rem;
-  margin-bottom: 0.45rem;
+  margin-top: 0.72rem;
+  margin-bottom: 0.34rem;
   font-weight: 600;
   color: var(--ocs-muted);
 }
@@ -190,7 +192,7 @@
 .content-supply-chain-app .ocs-intent-btn {
   border: 1px solid rgba(98, 126, 234, 0.34);
   border-radius: 10px;
-  padding: 0.56rem 0.5rem;
+  padding: 0.5rem 0.45rem;
   background: rgba(10, 20, 42, 0.8);
   color: var(--ocs-muted);
   font: inherit;
@@ -210,7 +212,7 @@
   justify-content: space-between;
   border: 1px solid rgba(98, 126, 234, 0.28);
   border-radius: 10px;
-  padding: 0.7rem 0.8rem;
+  padding: 0.58rem 0.72rem;
   background: rgba(9, 18, 38, 0.78);
 }
 
@@ -224,17 +226,17 @@
 }
 
 .content-supply-chain-app .ocs-status {
-  margin: 0.72rem 0 0;
+  margin: 0.64rem 0 0;
   color: var(--ocs-muted);
   min-height: 1.25rem;
 }
 
 .content-supply-chain-app .ocs-progress {
-  margin-top: 1.15rem;
+  margin-top: 1.2rem;
 }
 
 .content-supply-chain-app .ocs-steps {
-  margin: 0.7rem 0 0;
+  margin: 0.62rem 0 0;
   padding: 0;
   list-style: none;
   display: grid;
@@ -245,7 +247,7 @@
 .content-supply-chain-app .ocs-steps li {
   border: 1px solid rgba(98, 126, 234, 0.3);
   border-radius: 999px;
-  padding: 0.48rem 0.66rem;
+  padding: 0.42rem 0.62rem;
   background: rgba(9, 18, 38, 0.72);
   color: var(--ocs-muted);
   font-size: 0.82rem;
@@ -267,7 +269,7 @@
 }
 
 .content-supply-chain-app .ocs-success {
-  margin-top: 1.15rem;
+  margin-top: 1.2rem;
   border-color: rgba(34, 197, 94, 0.4);
   background: linear-gradient(180deg, rgba(13, 41, 34, 0.7), rgba(10, 28, 26, 0.74));
 }
@@ -295,7 +297,7 @@
 }
 
 .content-supply-chain-app .ocs-dev {
-  margin-top: 1.1rem;
+  margin-top: 1.2rem;
   border-radius: 12px;
   border: 1px solid rgba(98, 126, 234, 0.24);
   background: rgba(8, 14, 30, 0.68);
@@ -351,6 +353,7 @@
 @media (width <= 1100px) {
   .content-supply-chain-app .ocs-grid {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
   .content-supply-chain-app .ocs-steps {
@@ -364,7 +367,7 @@
 
 @media (width <= 700px) {
   .content-supply-chain-app .ocs-shell {
-    padding: 0.82rem;
+    padding: 0.78rem;
   }
 
   .content-supply-chain-app .ocs-steps {
