@@ -47,42 +47,80 @@ function etherscanTxUrl(network, txHash) {
 function template() {
   return `
     <section class="ocs-shell">
-      <div class="ocs-grid">
-        <section class="ocs-card ocs-connect">
-          <h3>1) Connect</h3>
-          <p class="ocs-muted">Use your wallet to establish ownership and write rights.</p>
-          <button data-el="connectBtn" class="ocs-btn">Connect Wallet</button>
-          <p data-el="walletPill" class="ocs-pill warn">Not connected</p>
+      <header class="ocs-toolbar">
+        <div class="ocs-brand">
+          <p class="ocs-brand-title">CONTENT_DROP // FLOW</p>
+          <p class="ocs-brand-sub">Immutable content velocity gateway</p>
+        </div>
+        <div class="ocs-network">
+          <span class="ocs-micro">network</span>
+          <strong data-el="networkPill">detecting</strong>
+          <span class="ocs-micro">link</span>
+          <strong data-el="linkPill">checking</strong>
+        </div>
+      </header>
+
+      <div class="ocs-main">
+        <section class="ocs-left">
+          <div class="ocs-card ocs-connect">
+            <h3>01 // Identity</h3>
+            <p class="ocs-muted">Connect once. Ownership context is attached to each write.</p>
+            <button data-el="connectBtn" class="ocs-btn">Connect Wallet</button>
+            <p data-el="walletPill" class="ocs-pill warn">Not connected</p>
+          </div>
+
+          <div class="ocs-card ocs-ingest">
+            <h3>02 // Ingest Port</h3>
+            <div data-el="drop" class="ocs-dropzone">
+              <input data-el="file" type="file" class="ocs-file-input" />
+              <p class="ocs-drop-title">Drop artifact here</p>
+              <p class="ocs-drop-sub">or click to browse</p>
+            </div>
+            <p data-el="filePill" class="ocs-pill">No file selected</p>
+
+            <label class="ocs-label" for="ocs-intent">Extraction Intent</label>
+            <div id="ocs-intent" class="ocs-intent">
+              <button type="button" data-intent="quick" class="ocs-intent-btn">Quick</button>
+              <button type="button" data-intent="balanced" class="ocs-intent-btn is-active">Balanced</button>
+              <button type="button" data-intent="deep" class="ocs-intent-btn">Deep</button>
+            </div>
+            <p class="ocs-muted" data-el="intentSummary">Balanced depth with strong metadata and hierarchy extraction.</p>
+          </div>
+
+          <div class="ocs-card ocs-commit">
+            <h3>03 // Commit</h3>
+            <p class="ocs-muted">Single action: quote, authorization, envelope write, and final commit.</p>
+            <div class="ocs-quote">
+              <span>Estimated Cost</span>
+              <strong data-el="quoteLabel">Not estimated yet</strong>
+            </div>
+            <button data-el="writeBtn" class="ocs-btn ocs-btn-primary">Write to Oak</button>
+            <p data-el="status" class="ocs-status">Ready</p>
+          </div>
         </section>
 
-        <section class="ocs-card ocs-ingest">
-          <h3>2) Add Content</h3>
-          <div data-el="drop" class="ocs-dropzone">
-            <input data-el="file" type="file" class="ocs-file-input" />
-            <p class="ocs-drop-title">Drag file here</p>
-            <p class="ocs-drop-sub">or click to browse</p>
+        <aside class="ocs-card ocs-ledger">
+          <h3>04 // Ledger Rail</h3>
+          <p class="ocs-muted">Live commit telemetry from the validator set.</p>
+          <div class="ocs-ledger-kv">
+            <span>Queue</span>
+            <strong data-el="queueDepth">n/a</strong>
           </div>
-          <p data-el="filePill" class="ocs-pill">No file selected</p>
-
-          <label class="ocs-label" for="ocs-intent">Extraction Intent</label>
-          <div id="ocs-intent" class="ocs-intent">
-            <button type="button" data-intent="quick" class="ocs-intent-btn">Quick</button>
-            <button type="button" data-intent="balanced" class="ocs-intent-btn is-active">Balanced</button>
-            <button type="button" data-intent="deep" class="ocs-intent-btn">Deep</button>
+          <div class="ocs-ledger-kv">
+            <span>Pending</span>
+            <strong data-el="pendingCount">n/a</strong>
           </div>
-          <p class="ocs-muted" data-el="intentSummary">Balanced depth with strong metadata and hierarchy extraction.</p>
-        </section>
-
-        <section class="ocs-card ocs-commit">
-          <h3>3) Write to Oak</h3>
-          <p class="ocs-muted">One action performs pricing, payment authorization, envelope write, and network commit.</p>
-          <div class="ocs-quote">
-            <span>Estimated Cost</span>
-            <strong data-el="quoteLabel">Not estimated yet</strong>
+          <div class="ocs-ledger-kv">
+            <span>Finalized</span>
+            <strong data-el="finalizedCount">n/a</strong>
           </div>
-          <button data-el="writeBtn" class="ocs-btn ocs-btn-primary">Write to Oak</button>
-          <p data-el="status" class="ocs-status">Ready</p>
-        </section>
+          <div class="ocs-ledger-feed">
+            <p class="ocs-feed-head">transaction log</p>
+            <ul data-el="txFeed">
+              <li><span>NOW</span> awaiting first write...</li>
+            </ul>
+          </div>
+        </aside>
       </div>
 
       <section class="ocs-card ocs-progress">
@@ -176,12 +214,15 @@ export default function decorate(block) {
     busy: false,
     blockchainConfig: null,
     statusPollTimer: null,
+    queuePollTimer: null,
   };
 
   const q = (name) => block.querySelector(`[data-el="${name}"]`);
   const els = {
     connectBtn: q('connectBtn'),
     writeBtn: q('writeBtn'),
+    networkPill: q('networkPill'),
+    linkPill: q('linkPill'),
     walletPill: q('walletPill'),
     filePill: q('filePill'),
     status: q('status'),
@@ -192,6 +233,10 @@ export default function decorate(block) {
     successCard: q('successCard'),
     contentCid: q('contentCid'),
     txHash: q('txHash'),
+    queueDepth: q('queueDepth'),
+    pendingCount: q('pendingCount'),
+    finalizedCount: q('finalizedCount'),
+    txFeed: q('txFeed'),
     txLink: q('txLink'),
     statusLink: q('statusLink'),
     writeState: q('writeState'),
@@ -210,6 +255,18 @@ export default function decorate(block) {
 
   const setDev = (data) => {
     els.devOut.textContent = pretty(data);
+  };
+
+  const appendFeed = (message, level = 'info') => {
+    const li = document.createElement('li');
+    const stamp = document.createElement('span');
+    stamp.textContent = new Date().toISOString().slice(11, 19);
+    li.append(stamp, ` ${message}`);
+    if (level === 'ok') li.classList.add('is-ok');
+    if (level === 'warn') li.classList.add('is-warn');
+    if (level === 'error') li.classList.add('is-error');
+    els.txFeed.prepend(li);
+    while (els.txFeed.children.length > 8) els.txFeed.removeChild(els.txFeed.lastChild);
   };
 
   const setBusy = (flag) => {
@@ -240,6 +297,37 @@ export default function decorate(block) {
     }
     if (isNetworkError(error)) return `Service connection issue. ${hint || 'Check service URLs in Developer Settings.'}`;
     return error?.message || String(error);
+  };
+
+  const stopQueuePolling = () => {
+    if (state.queuePollTimer) {
+      window.clearInterval(state.queuePollTimer);
+      state.queuePollTimer = null;
+    }
+  };
+
+  const refreshQueueInsights = async () => {
+    try {
+      const res = await fetch(buildUrl(getValidatorBase(), '/v1/proposals/queue/stats'));
+      if (!res.ok) return;
+      const payload = await res.json();
+      const root = payload?.data || payload;
+      const queue = root?.batchQueueSize ?? root?.totalQueued ?? root?.queueSize ?? '0';
+      const pending = root?.pendingCount ?? root?.mempoolPendingCount ?? root?.backpressurePendingCount ?? '0';
+      const finalized = root?.totalFinalizedCount ?? root?.totalFinalizedCountLifetime ?? root?.processedCount ?? '0';
+      els.queueDepth.textContent = String(queue);
+      els.pendingCount.textContent = String(pending);
+      els.finalizedCount.textContent = String(finalized);
+      els.linkPill.textContent = 'active';
+    } catch (_) {
+      els.linkPill.textContent = 'degraded';
+    }
+  };
+
+  const startQueuePolling = () => {
+    stopQueuePolling();
+    refreshQueueInsights();
+    state.queuePollTimer = window.setInterval(refreshQueueInsights, 5000);
   };
 
   const setStep = (name, mode) => {
@@ -313,6 +401,8 @@ export default function decorate(block) {
       const payload = await res.json();
       const root = payload?.data || payload?.config || payload;
       state.blockchainConfig = root;
+      const net = inferNetworkName(root);
+      els.networkPill.textContent = net === 'unknown' ? 'unknown network' : net;
       const candidatePairs = [
         root?.paymentRecipient,
         root?.clusterWalletAddress,
@@ -321,9 +411,12 @@ export default function decorate(block) {
       ];
       const hit = candidatePairs.find((value) => value && String(value).startsWith('0x'));
       state.discoveredPaymentTarget = hit || null;
+      els.linkPill.textContent = hit ? 'active' : 'partial';
     } catch (e) {
       state.blockchainConfig = null;
       state.discoveredPaymentTarget = null;
+      els.networkPill.textContent = 'offline';
+      els.linkPill.textContent = 'offline';
     }
   };
 
@@ -332,11 +425,14 @@ export default function decorate(block) {
       const res = await fetch(`${getNormalizerBase()}/v1/runtime-config`);
       if (res.ok) state.runtimeConfig = await res.json();
       setStatus(`Ready (${state.runtimeConfig.normalizerMode} mode)`);
+      appendFeed(`runtime ${state.runtimeConfig.normalizerMode}`, 'info');
     } catch (e) {
       const hint = endpointHint();
       setStatus(hint ? `Service unavailable. ${hint}` : 'Service unavailable. Check API URL in Developer Settings.');
+      appendFeed('runtime unavailable', 'warn');
     }
     await discoverPaymentTarget();
+    startQueuePolling();
   };
 
   const connectWallet = async () => {
@@ -348,11 +444,13 @@ export default function decorate(block) {
         els.wallet.value = generated;
         updateWalletPill();
         setStatus('Mock wallet generated for demo flow');
+        appendFeed('mock wallet generated', 'info');
         return;
       }
       state.connectedWallet = candidate;
       els.wallet.value = candidate;
       updateWalletPill();
+      appendFeed('wallet connected (mock)', 'ok');
       return;
     }
     if (!window.ethereum) throw new Error('MetaMask not detected');
@@ -363,6 +461,7 @@ export default function decorate(block) {
     if (!isValidAddress(state.connectedWallet)) throw new Error('Connected wallet address is invalid.');
     els.wallet.value = state.connectedWallet;
     updateWalletPill();
+    appendFeed('wallet connected', 'ok');
   };
 
   const ensureRegistration = async () => {
@@ -400,6 +499,7 @@ export default function decorate(block) {
       throw new Error(payload?.error || payload?.message || `register failed (${res.status})`);
     }
     state.isRegistered = true;
+    appendFeed('write session prepared', 'ok');
   };
 
   const getQuote = async (sizeBytes) => {
@@ -548,6 +648,7 @@ export default function decorate(block) {
 
     if (!res.ok) throw new Error(payload?.error || payload?.message || `validator rejected proposal (${res.status})`);
 
+    appendFeed(`proposal accepted ${detail.proposalId || ''}`.trim(), 'ok');
     return detail;
   };
 
@@ -572,6 +673,7 @@ export default function decorate(block) {
         const root = payload?.data || payload;
         const phase = root?.status || root?.state || 'processing';
         els.writeState.textContent = `Write status: ${phase}`;
+        appendFeed(`status ${phase}`, /final|committed|done|complete/i.test(String(phase)) ? 'ok' : 'info');
         if (/final|committed|done|complete/i.test(String(phase))) {
           stopStatusPolling();
         }
@@ -592,6 +694,7 @@ export default function decorate(block) {
     clearSteps();
     setBusy(true);
     setStatus('Starting flow...');
+    appendFeed('write flow started', 'info');
 
     try {
       markActive('connect');
@@ -639,6 +742,7 @@ export default function decorate(block) {
       els.writeState.textContent = result?.proposalId ? `Write accepted. Proposal ID: ${result.proposalId}` : 'Write accepted. Tracking by queue insights.';
       startStatusPolling(result?.proposalId);
       setStatus('Content written to Oak successfully');
+      appendFeed('content committed and receipted', 'ok');
     } catch (e) {
       stopStatusPolling();
       const active = els.steps.querySelector('.is-active');
@@ -647,6 +751,7 @@ export default function decorate(block) {
         markError(activeStep);
       }
       setStatus(formatFlowError(activeStep, e));
+      appendFeed(`flow error: ${formatFlowError(activeStep, e)}`, 'error');
     } finally {
       setBusy(false);
     }
@@ -719,6 +824,7 @@ export default function decorate(block) {
   [els.validatorUrl, els.normalizerUrl, els.paymentRecipientOverride].forEach((input) => {
     input.addEventListener('change', async () => {
       stopStatusPolling();
+      stopQueuePolling();
       await loadRuntimeConfig();
     });
   });
