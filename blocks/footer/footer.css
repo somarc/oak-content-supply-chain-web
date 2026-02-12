@@ -1,54 +1,54 @@
 footer {
-  background: rgba(10, 14, 28, 0.85);
-  border-top: 1px solid var(--border-divider);
-  font-size: var(--body-font-size-xs);
+  margin-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, transparent, rgba(59, 231, 255, 0.08) 55%, transparent),
+    rgba(5, 7, 10, 0.96);
+  background-size: 22px 22px, 22px 22px, auto, auto;
 }
 
 footer .footer > div {
-  margin: auto;
-  max-width: 1200px;
-  padding: 34px 20px 28px;
-  color: var(--text-secondary);
-  text-align: center;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1rem;
 }
 
 footer .footer > div > div {
-  margin: 0 auto;
-  max-width: 760px;
-  border: 1px solid var(--border-primary);
-  border-radius: 12px;
-  background: linear-gradient(180deg, rgba(19, 29, 54, 0.72), rgba(13, 21, 40, 0.72));
-  padding: 16px 18px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(8, 10, 14, 0.86);
+  padding: 0.62rem 0.8rem;
 }
 
 footer .footer p {
-  margin: 0.35rem 0;
-  line-height: 1.45;
-}
-
-footer .footer p:first-child {
-  color: var(--text-color);
-  font-family: var(--heading-font-family);
-  letter-spacing: 0.03em;
+  margin: 0;
+  color: #9fa7b8;
+  font: 600 0.72rem/1.4 var(--mono-font-family);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  font-size: 0.75rem;
 }
 
 footer .footer a {
-  color: var(--brand-secondary);
+  color: #9aefff;
+  text-decoration: none;
 }
 
 footer .footer a:hover {
-  color: #d2fbff;
+  color: #dbf9ff;
 }
 
-@media (min-width: 900px) {
+@media (width <= 760px) {
   footer .footer > div {
-    padding: 40px 24px 30px;
+    padding: 0.76rem;
   }
 
   footer .footer > div > div {
-    padding: 18px 22px;
+    padding: 0.55rem 0.62rem;
+  }
+
+  footer .footer p {
+    font-size: 0.66rem;
   }
 }
