@@ -49,9 +49,50 @@ function buildNav(fragment) {
   navSections.className = 'nav-sections';
   tools.className = 'nav-tools';
 
+  const brandLink = brand.querySelector('a');
+  if (brandLink && !brandLink.querySelector('.nav-brand-mark')) {
+    brandLink.insertAdjacentHTML('afterbegin', '<span class="nav-brand-mark" aria-hidden="true"></span>');
+  }
+
   decorateNavSections(navSections);
 
+  const wallet = document.createElement('div');
+  wallet.className = 'nav-wallet';
+  wallet.innerHTML = `
+    <span class="nav-signal-pill">Network: <strong data-ocs-el="networkPill">detecting</strong></span>
+    <span class="nav-signal-pill">Link: <strong data-ocs-el="linkPill">checking</strong></span>
+    <span class="nav-wallet-pill" data-ocs-el="walletAddress">Wallet: not connected</span>
+    <span class="nav-wallet-pill" data-ocs-el="walletChain">Chain: unknown</span>
+    <span class="nav-wallet-pill" data-ocs-el="walletBalance">Balance: -</span>
+    <button type="button" class="nav-wallet-btn" data-ocs-el="connectWalletBtn">Connect</button>
+    <button type="button" class="nav-wallet-btn nav-wallet-btn-ghost hidden" data-ocs-el="clearWalletBtn">Clear</button>
+  `;
+  tools.append(wallet);
+
   hamburger.querySelector('button').addEventListener('click', () => toggleMenu(nav, navSections));
+
+  const connectBtn = wallet.querySelector('[data-ocs-el="connectWalletBtn"]');
+  const clearBtn = wallet.querySelector('[data-ocs-el="clearWalletBtn"]');
+  connectBtn?.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('ocs:wallet-connect-request'));
+  });
+  clearBtn?.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('ocs:wallet-clear-request'));
+  });
+
+  window.addEventListener('ocs:wallet-state', (event) => {
+    const detail = event?.detail || {};
+    const connected = Boolean(detail.connected);
+    const address = wallet.querySelector('[data-ocs-el="walletAddress"]');
+    const chain = wallet.querySelector('[data-ocs-el="walletChain"]');
+    const balance = wallet.querySelector('[data-ocs-el="walletBalance"]');
+
+    if (address) address.textContent = connected ? `Wallet: ${detail.shortAddress || 'connected'}` : 'Wallet: not connected';
+    if (chain) chain.textContent = `Chain: ${detail.chain || 'unknown'}`;
+    if (balance) balance.textContent = `Balance: ${detail.balance || '-'} ETH`;
+    if (connectBtn) connectBtn.textContent = connected ? 'Refresh' : 'Connect';
+    if (clearBtn) clearBtn.classList.toggle('hidden', !connected);
+  });
 
   isDesktop.addEventListener('change', () => {
     if (isDesktop.matches) {

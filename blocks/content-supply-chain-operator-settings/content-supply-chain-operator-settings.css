@@ -1,0 +1,51 @@
+.content-supply-chain-operator-settings .ocs-operator-card {
+  margin: 0;
+}
+
+.content-supply-chain-operator-settings .ocs-dev-grid {
+  margin-top: 0.62rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.content-supply-chain-operator-settings label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.63rem;
+  color: #666;
+  font-weight: 700;
+}
+
+.content-supply-chain-operator-settings input,
+.content-supply-chain-operator-settings select {
+  border: 1px solid #a4a4a4;
+  border-radius: 8px;
+  background: #ebebeb;
+  color: #1f1f1f;
+  height: 2rem;
+  padding: 0 0.52rem;
+  font-size: 0.82rem;
+}
+
+.content-supply-chain-operator-settings pre {
+  margin: 0.65rem 0 0;
+  border: 1px solid #a4a4a4;
+  border-radius: 8px;
+  background: #ebebeb;
+  color: #1f1f1f;
+  padding: 0.58rem;
+  min-height: 84px;
+  max-height: 170px;
+  overflow: auto;
+  font-size: 0.72rem;
+}
+
+@media (width <= 900px) {
+  .content-supply-chain-operator-settings .ocs-dev-grid {
+    grid-template-columns: 1fr;
+  }
+}

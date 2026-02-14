@@ -1,0 +1,189 @@
+.content-supply-chain-telemetry .ocs-telemetry-shell {
+  margin: 0;
+}
+
+.content-supply-chain-telemetry .ocs-technical-grid {
+  margin-top: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.content-supply-chain-telemetry .ocs-progress,
+.content-supply-chain-telemetry .ocs-ledger,
+.content-supply-chain-telemetry .ocs-troubleshoot {
+  border: 1px solid #9d9d9d;
+  border-radius: 10px;
+  background: #dfdfdf;
+  color: #1b1b1b;
+  padding: 0.9rem;
+}
+
+.content-supply-chain-telemetry .ocs-troubleshoot {
+  margin-top: 0.8rem;
+}
+
+.content-supply-chain-telemetry .ocs-steps {
+  margin: 0.55rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.content-supply-chain-telemetry .ocs-steps li {
+  border: 1px solid #9a9a9a;
+  border-radius: 999px;
+  background: #ececec;
+  color: #222;
+  padding: 0.32rem 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.73rem;
+  font-weight: 700;
+}
+
+.content-supply-chain-telemetry .ocs-steps li.is-active { background: #fff; }
+.content-supply-chain-telemetry .ocs-steps li.is-done { background: #e7f5ec; border-color: #8cae9b; }
+.content-supply-chain-telemetry .ocs-steps li.is-error { background: #f7e7ea; border-color: #bc8f96; }
+
+.content-supply-chain-telemetry .ocs-ledger-kv {
+  margin-top: 0.44rem;
+  border-bottom: 1px solid #afafaf;
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 0.34rem;
+}
+
+.content-supply-chain-telemetry .ocs-ledger-kv span,
+.content-supply-chain-telemetry .ocs-feed-head {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.58rem;
+  color: #666;
+  font-weight: 700;
+}
+
+.content-supply-chain-telemetry .ocs-ledger-feed ul {
+  margin: 0.44rem 0 0;
+  padding: 0.55rem;
+  list-style: none;
+  border: 1px solid #aeaeae;
+  border-radius: 9px;
+  background: #ebebeb;
+  max-height: 175px;
+  overflow: auto;
+  font-size: 0.73rem;
+}
+
+.content-supply-chain-telemetry .ocs-ledger-feed li {
+  color: #272727;
+}
+
+.content-supply-chain-telemetry .ocs-ledger-feed li span {
+  color: #727272;
+}
+
+.content-supply-chain-telemetry .ocs-diag-list {
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.content-supply-chain-telemetry .ocs-diag-list li {
+  border: 1px solid #ababab;
+  border-radius: 8px;
+  background: #e8e8e8;
+  padding: 0.45rem 0.55rem;
+}
+
+.content-supply-chain-telemetry .ocs-diag-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.content-supply-chain-telemetry .ocs-diag-head strong {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #1d1d1d;
+}
+
+.content-supply-chain-telemetry .ocs-diag-status {
+  border: 1px solid #a2a2a2;
+  border-radius: 999px;
+  padding: 0.18rem 0.5rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: #efefef;
+  color: #3a3a3a;
+  white-space: nowrap;
+}
+
+.content-supply-chain-telemetry .ocs-diag-status.is-pending {
+  background: #efefef;
+  border-color: #a2a2a2;
+  color: #525252;
+}
+
+.content-supply-chain-telemetry .ocs-diag-status.is-active {
+  background: #f6f1e2;
+  border-color: #b4a079;
+  color: #5d4f33;
+  animation: ocs-diag-pulse 1.5s ease-in-out infinite;
+}
+
+.content-supply-chain-telemetry .ocs-diag-status.is-done {
+  background: #e8f2eb;
+  border-color: #8cae9b;
+  color: #2f4f3c;
+}
+
+.content-supply-chain-telemetry .ocs-diag-status.is-error {
+  background: #f7e7ea;
+  border-color: #bc8f96;
+  color: #6a333b;
+}
+
+.content-supply-chain-telemetry .ocs-diag-detail {
+  margin: 0.34rem 0 0;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: #444;
+}
+
+.content-supply-chain-telemetry .ocs-diag-endpoint {
+  margin: 0.3rem 0 0;
+  font-size: 0.7rem;
+  color: #5a5a5a;
+}
+
+.content-supply-chain-telemetry .ocs-diag-endpoint span {
+  font-weight: 600;
+}
+
+.content-supply-chain-telemetry .ocs-diag-endpoint code {
+  font-size: 0.68rem;
+  background: #efefef;
+  border: 1px solid #b2b2b2;
+  border-radius: 6px;
+  padding: 0.06rem 0.3rem;
+}
+
+@keyframes ocs-diag-pulse {
+  0% { box-shadow: 0 0 0 0 rgb(180 160 121 / 40%); }
+  70% { box-shadow: 0 0 0 8px rgb(180 160 121 / 0%); }
+  100% { box-shadow: 0 0 0 0 rgb(180 160 121 / 0%); }
+}
+
+@media (width <= 900px) {
+  .content-supply-chain-telemetry .ocs-technical-grid {
+    grid-template-columns: 1fr;
+  }
+}

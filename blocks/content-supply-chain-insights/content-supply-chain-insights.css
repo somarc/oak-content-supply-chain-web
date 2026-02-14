@@ -1,0 +1,57 @@
+.content-supply-chain-insights .ocs-card {
+  margin: 0;
+}
+
+.content-supply-chain-insights .ocs-card + .ocs-card {
+  margin-top: 0.8rem;
+}
+
+.content-supply-chain-insights .ocs-success-links {
+  margin-top: 0.7rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.content-supply-chain-insights .ocs-success-links a {
+  border: 1px solid #8b96ad;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 58%);
+  color: #222b3e;
+  text-decoration: none;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.content-supply-chain-insights .ocs-success-grid {
+  margin-top: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.content-supply-chain-insights .ocs-success-grid span {
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.6rem;
+  color: #5f6a83;
+}
+
+.content-supply-chain-insights .ocs-success-grid code {
+  display: block;
+  margin-top: 0.3rem;
+  border: 1px solid #a5b1ca;
+  border-radius: 8px;
+  background: #eef2fb;
+  color: #1f2740;
+  padding: 0.42rem 0.52rem;
+  overflow-wrap: anywhere;
+}
+
+@media (width <= 768px) {
+  .content-supply-chain-insights .ocs-success-grid {
+    grid-template-columns: 1fr;
+  }
+}

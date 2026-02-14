@@ -1,19 +1,19 @@
 :root {
-  --background-color: #0f0f23;
-  --light-color: #1a1a2e;
-  --dark-color: #16213e;
-  --text-color: rgba(255, 255, 255, 0.95);
-  --link-color: #627eea;
-  --link-hover-color: #8c8dfc;
+  --background-color: #d6d6d6;
+  --light-color: #ececec;
+  --dark-color: #c9c9c9;
+  --text-color: #121212;
+  --link-color: #1c1c1c;
+  --link-hover-color: #000;
 
-  --brand-primary: #627eea;
-  --brand-secondary: #22d3ee;
-  --brand-tertiary: #a5a6ff;
-  --bg-elevated: #131d36;
-  --border-primary: rgba(98, 126, 234, 0.24);
-  --border-divider: rgba(98, 126, 234, 0.16);
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --text-tertiary: rgba(255, 255, 255, 0.52);
+  --brand-primary: #101010;
+  --brand-secondary: #222;
+  --brand-tertiary: #d7d7d7;
+  --bg-elevated: #dcdcdc;
+  --border-primary: #9f9f9f;
+  --border-divider: #b9b9b9;
+  --text-secondary: #323232;
+  --text-tertiary: #5a5a5a;
 
   --body-font-family: roboto, roboto-fallback, sans-serif;
   --heading-font-family: roboto-condensed, roboto-condensed-fallback, sans-serif;
@@ -65,8 +65,7 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(circle at 14% 16%, rgba(34, 211, 238, 0.09), transparent 34%),
-    radial-gradient(circle at 82% 84%, rgba(124, 58, 237, 0.08), transparent 42%),
+    linear-gradient(180deg, #e0e0e0 0%, #d0d0d0 100%),
     var(--background-color);
   color: var(--text-color);
   font-family: var(--body-font-family);
@@ -98,18 +97,18 @@ main > div {
 
 @media (width >= 900px) {
   main > div {
-    margin: 40px auto;
-    max-width: 1200px;
-    padding: 0 20px;
+    margin: 26px auto;
+    max-width: 1720px;
+    padding: 0 12px;
   }
 }
 
 main > div.section {
-  background: rgba(19, 29, 54, 0.5);
-  border: 1px solid var(--border-divider);
-  border-radius: 14px;
+  background: rgb(224 224 224 / 80%);
+  border: 1px solid #b4b4b4;
+  border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 22px rgb(17 22 33 / 9%);
 }
 
 h1,
@@ -160,8 +159,8 @@ pre {
 
 pre {
   padding: 16px;
-  border-radius: 10px;
-  background: rgba(10, 14, 28, 0.88);
+  border-radius: 12px;
+  background: #f7faff;
   border: 1px solid var(--border-primary);
   overflow-x: auto;
 }
@@ -179,7 +178,7 @@ button {
   text-align: center;
   text-decoration: none;
   background: linear-gradient(90deg, var(--brand-primary), var(--brand-secondary));
-  color: #090b12;
+  color: #fff;
   cursor: pointer;
 }
 
@@ -192,7 +191,7 @@ button:focus {
 
 a.button.secondary,
 button.secondary {
-  background: transparent;
+  background: #fff;
   color: var(--text-color);
   border-color: var(--border-primary);
 }
@@ -215,9 +214,9 @@ main img {
 }
 
 main .cards > ul > li {
-  border-radius: 12px;
+  border-radius: 14px;
   border: 1px solid var(--border-primary);
-  background: rgba(22, 33, 62, 0.6);
+  background: #fff;
 }
 
 main .cards .cards-card-body {
@@ -226,36 +225,24 @@ main .cards .cards-card-body {
 
 main .section:first-of-type {
   position: relative;
-  overflow: hidden;
-}
-
-main .section:first-of-type::after {
-  content: '';
-  position: absolute;
-  inset: -45% -10% auto auto;
-  width: 340px;
-  height: 340px;
-  border-radius: 50%;
-  pointer-events: none;
-  background: radial-gradient(circle, rgba(98, 126, 234, 0.2), transparent 65%);
 }
 
 #ops-page-refresh-status {
   margin: 0 0 1rem;
   padding: 0.5rem 0.75rem;
-  border: 1px solid rgba(132, 152, 207, 0.24);
-  border-radius: 10px;
-  background: rgba(18, 28, 52, 0.55);
+  border: 1px solid #d7e2f4;
+  border-radius: 12px;
+  background: #f6f9ff;
   color: var(--text-secondary);
   font-size: 0.78rem;
   font-family: var(--mono-font-family);
 }
 
 .ops-refresh-button {
-  border: 1px solid rgba(98, 126, 234, 0.5) !important;
+  border: 1px solid #a9c3f3 !important;
   border-radius: 999px !important;
-  background: linear-gradient(90deg, rgba(98, 126, 234, 0.24), rgba(34, 211, 238, 0.22)) !important;
-  color: var(--text-primary) !important;
+  background: #eaf1ff !important;
+  color: #244978 !important;
   font: inherit !important;
   font-size: 0.8rem !important;
   font-weight: 600 !important;

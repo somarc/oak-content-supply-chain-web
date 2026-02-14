@@ -1,9 +1,3 @@
-function randomHex(bytes = 32) {
-  let out = '0x';
-  for (let i = 0; i < bytes; i += 1) out += Math.floor(Math.random() * 256).toString(16).padStart(2, '0');
-  return out;
-}
-
 function pretty(data) {
   return JSON.stringify(data, null, 2);
 }
@@ -26,7 +20,10 @@ function buildUrl(base, path) {
 
 function inferNetworkName(config) {
   const candidate = String(
-    config?.network
+    config?.mode
+    || config?.blockchainMode
+    || config?.networkMode
+    || config?.network
     || config?.ethereumNetwork
     || config?.chain
     || config?.chainName
@@ -44,138 +41,319 @@ function etherscanTxUrl(network, txHash) {
   return `https://etherscan.io/tx/${txHash}`;
 }
 
+function shortAddress(address) {
+  const value = String(address || '');
+  if (!value) return '-';
+  if (value.length <= 18) return value;
+  return `${value.slice(0, 8)}...${value.slice(-6)}`;
+}
+
+function chainLabelFromId(chainId) {
+  const value = String(chainId || '').toLowerCase();
+  if (value === '0x1') return 'Ethereum';
+  if (value === '0xaa36a7') return 'Sepolia';
+  if (value === '0xa4b1') return 'Arbitrum';
+  if (value === '0x2105') return 'Base';
+  return value ? `Chain ${value}` : 'Unknown';
+}
+
+function normalizeChainId(chainId) {
+  if (chainId === null || chainId === undefined) return null;
+  const raw = String(chainId).trim().toLowerCase();
+  if (!raw) return null;
+  if (raw.startsWith('0x')) {
+    try {
+      return `0x${BigInt(raw).toString(16)}`;
+    } catch (_e) {
+      return raw;
+    }
+  }
+  if (/^\d+$/.test(raw)) {
+    try {
+      return `0x${BigInt(raw).toString(16)}`;
+    } catch (_e) {
+      return null;
+    }
+  }
+  return raw;
+}
+
+function expectedChainIdForNetwork(network) {
+  if (network === 'sepolia') return '0xaa36a7';
+  if (network === 'mainnet') return '0x1';
+  return null;
+}
+
+function chainNameForId(chainId) {
+  const normalized = normalizeChainId(chainId);
+  if (normalized === '0xaa36a7') return 'Sepolia';
+  if (normalized === '0x1') return 'Ethereum';
+  return chainLabelFromId(normalized);
+}
+
+function toHexQuantity(value) {
+  const n = typeof value === 'bigint' ? value : BigInt(value || 0);
+  return `0x${n.toString(16)}`;
+}
+
+function generateProposalIdHex() {
+  const bytes = new Uint8Array(32);
+  if (window.crypto?.getRandomValues) {
+    window.crypto.getRandomValues(bytes);
+  } else {
+    for (let i = 0; i < bytes.length; i += 1) {
+      bytes[i] = Math.floor(Math.random() * 256);
+    }
+  }
+  return `0x${Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('')}`;
+}
+
+function describeError(error) {
+  if (!error) return 'unknown error';
+  if (typeof error === 'string') return error;
+  const message = error?.message
+    || error?.reason
+    || error?.shortMessage
+    || error?.data?.message
+    || error?.error?.message;
+  if (message) return String(message);
+  try {
+    return JSON.stringify(error);
+  } catch (_e) {
+    return String(error);
+  }
+}
+
+function describePayloadError(payload, fallback) {
+  const candidate = payload?.error || payload?.message || fallback || 'unknown error';
+  if (typeof candidate === 'string') return candidate;
+  return describeError(candidate);
+}
+
+function formatWeiToEth(weiHexOrDecimal) {
+  if (weiHexOrDecimal === null || weiHexOrDecimal === undefined) return '-';
+  let wei;
+  try {
+    const raw = String(weiHexOrDecimal);
+    wei = raw.startsWith('0x') ? BigInt(raw) : BigInt(raw || '0');
+  } catch (_e) {
+    return '-';
+  }
+  const whole = wei / 1000000000000000000n;
+  const fractional = wei % 1000000000000000000n;
+  const frac4 = (fractional / 100000000000000n).toString().padStart(4, '0');
+  return `${whole.toString()}.${frac4}`;
+}
+
+function safeNumber(value, fallback = null) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function guessEthUsdPrice(config) {
+  const candidate = safeNumber(
+    config?.ethUsd
+    || config?.ethPriceUsd
+    || config?.usdPerEth
+    || config?.eth_usd
+    || config?.priceEthUsd,
+    null,
+  );
+  return candidate && candidate > 0 ? candidate : 3000;
+}
+
+function formatUsd(value) {
+  const n = safeNumber(value, null);
+  if (n === null) return '-';
+  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function isLikelyIpfsCid(value) {
+  const cid = String(value || '').trim();
+  if (!cid) return false;
+  return /^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{20,})$/.test(cid);
+}
+
 function template() {
   return `
     <section class="ocs-shell">
       <header class="ocs-toolbar">
         <div class="ocs-brand">
-          <p class="ocs-brand-title">CONTENT_DROP // FLOW</p>
-          <p class="ocs-brand-sub">Immutable content velocity gateway</p>
+          <p class="ocs-brand-title">LANGEXTRACT</p>
+          <p class="ocs-brand-sub">content supply chain control room</p>
         </div>
-        <div class="ocs-network">
-          <span class="ocs-micro">network</span>
-          <strong data-el="networkPill">detecting</strong>
-          <span class="ocs-micro">link</span>
-          <strong data-el="linkPill">checking</strong>
+        <div class="ocs-toolbar-right">
+          <div class="ocs-network">
+            <span class="ocs-micro">network</span>
+            <strong data-el="networkPill">detecting</strong>
+            <span class="ocs-micro">link</span>
+            <strong data-el="linkPill">checking</strong>
+          </div>
+          <div class="ocs-wallet-rail">
+            <div class="ocs-wallet-stat">
+              <span class="ocs-micro">wallet</span>
+              <strong data-el="walletAddress">not connected</strong>
+            </div>
+            <div class="ocs-wallet-stat">
+              <span class="ocs-micro">balance</span>
+              <strong data-el="walletBalance">- ETH</strong>
+            </div>
+            <div class="ocs-wallet-stat">
+              <span class="ocs-micro">chain</span>
+              <strong data-el="walletChain">unknown</strong>
+            </div>
+            <button type="button" data-el="connectWalletBtn" class="ocs-wallet-btn">Refresh</button>
+            <button type="button" data-el="clearWalletBtn" class="ocs-wallet-btn ocs-wallet-btn-ghost hidden">Clear</button>
+          </div>
         </div>
       </header>
 
-      <div class="ocs-main">
-        <section class="ocs-left">
-          <div class="ocs-card ocs-connect">
-            <h3>01 // Identity</h3>
-            <p class="ocs-muted">Connect once. Ownership context is attached to each write.</p>
-            <button data-el="connectBtn" class="ocs-btn">Connect Wallet</button>
-            <p data-el="walletPill" class="ocs-pill warn">Not connected</p>
-          </div>
-
-          <div class="ocs-card ocs-ingest">
-            <h3>02 // Ingest Port</h3>
-            <div data-el="drop" class="ocs-dropzone">
-              <input data-el="file" type="file" class="ocs-file-input" />
-              <p class="ocs-drop-title">Drop artifact here</p>
-              <p class="ocs-drop-sub">or click to browse</p>
-            </div>
+      <div class="ocs-workspace">
+        <aside class="ocs-card ocs-stage-rail">
+          <h3>Stage Content</h3>
+          <p class="ocs-muted">Drop a source file, extract envelope, then submit a signed proposal write.</p>
+          <div class="ocs-meta-strip">
+            <p data-el="walletPill" class="ocs-pill warn">Wallet not connected</p>
             <p data-el="filePill" class="ocs-pill">No file selected</p>
-
-            <label class="ocs-label" for="ocs-intent">Extraction Intent</label>
-            <div id="ocs-intent" class="ocs-intent">
-              <button type="button" data-intent="quick" class="ocs-intent-btn">Quick</button>
-              <button type="button" data-intent="balanced" class="ocs-intent-btn is-active">Balanced</button>
-              <button type="button" data-intent="deep" class="ocs-intent-btn">Deep</button>
-            </div>
-            <p class="ocs-muted" data-el="intentSummary">Balanced depth with strong metadata and hierarchy extraction.</p>
           </div>
 
-          <div class="ocs-card ocs-commit">
-            <h3>03 // Commit</h3>
-            <p class="ocs-muted">Single action: quote, authorization, envelope write, and final commit.</p>
-            <div class="ocs-quote">
-              <span>Estimated Cost</span>
-              <strong data-el="quoteLabel">Not estimated yet</strong>
-            </div>
-            <button data-el="writeBtn" class="ocs-btn ocs-btn-primary">Write to Oak</button>
-            <p data-el="status" class="ocs-status">Ready</p>
+          <div data-el="drop" class="ocs-dropzone">
+            <input data-el="file" type="file" class="ocs-file-input" />
+            <p class="ocs-drop-title">Drop PDF / TEXT payload</p>
+            <p class="ocs-drop-sub">or click to browse</p>
           </div>
-        </section>
 
-        <aside class="ocs-card ocs-ledger">
-          <h3>04 // Ledger Rail</h3>
-          <p class="ocs-muted">Live commit telemetry from the validator set.</p>
-          <div class="ocs-ledger-kv">
-            <span>Queue</span>
-            <strong data-el="queueDepth">n/a</strong>
+          <label class="ocs-label" for="ocs-intent">Extraction Intent</label>
+          <div id="ocs-intent" class="ocs-intent">
+            <button type="button" data-intent="quick" class="ocs-intent-btn">Quick</button>
+            <button type="button" data-intent="balanced" class="ocs-intent-btn is-active">Balanced</button>
+            <button type="button" data-intent="deep" class="ocs-intent-btn">Deep</button>
           </div>
-          <div class="ocs-ledger-kv">
-            <span>Pending</span>
-            <strong data-el="pendingCount">n/a</strong>
+          <p class="ocs-muted" data-el="intentSummary">Balanced depth with strong metadata and hierarchy extraction.</p>
+
+          <div class="ocs-quote">
+            <span>Estimated Proposal Cost</span>
+            <strong data-el="quoteLabel">Connect wallet and estimate proposal cost</strong>
           </div>
-          <div class="ocs-ledger-kv">
-            <span>Finalized</span>
-            <strong data-el="finalizedCount">n/a</strong>
-          </div>
-          <div class="ocs-ledger-feed">
-            <p class="ocs-feed-head">transaction log</p>
-            <ul data-el="txFeed">
-              <li><span>NOW</span> awaiting first write...</li>
-            </ul>
-          </div>
+          <button data-el="writeBtn" class="ocs-btn ocs-btn-primary">Connect wallet</button>
+          <p data-el="status" class="ocs-status">Ready</p>
         </aside>
+
+        <section class="ocs-main-canvas">
+          <section class="ocs-card ocs-primary">
+            <h3>Source Document Insights</h3>
+            <p data-el="envelopeSummary" class="ocs-muted">Run estimate to generate an envelope preview from langextract output.</p>
+            <div data-el="envelopeEntities" class="ocs-meta-strip"></div>
+          </section>
+
+          <section class="ocs-card ocs-envelope">
+            <h3>Repository Mapping: JCR Envelope</h3>
+            <pre data-el="envelopeJson" class="ocs-envelope-json">{"status":"awaiting-envelope"}</pre>
+          </section>
+
+          <section data-el="successCard" class="ocs-card ocs-success hidden">
+            <h3>Proposal Accepted</h3>
+            <p class="ocs-muted">Fabric receipt issued. Track settlement and validator finalization below.</p>
+            <div class="ocs-success-links">
+              <a data-el="txLink" target="_blank" rel="noreferrer">View transaction</a>
+              <a data-el="statusLink" target="_blank" rel="noreferrer">View proposal status</a>
+            </div>
+            <p data-el="writeState" class="ocs-success-state">Proposal finalized.</p>
+            <div class="ocs-success-grid">
+              <div>
+                <span>Content ID</span>
+                <code data-el="contentCid">-</code>
+              </div>
+              <div>
+                <span>Transaction</span>
+                <code data-el="txHash">-</code>
+              </div>
+            </div>
+          </section>
+
+          <details class="ocs-technical" open>
+            <summary>Technical Details</summary>
+            <div class="ocs-technical-grid">
+              <section class="ocs-card ocs-progress">
+                <h3>Execution Flow</h3>
+                <ol data-el="steps" class="ocs-steps">
+                  <li data-step="preflight">Validate endpoints</li>
+                  <li data-step="connect">Connect wallet</li>
+                  <li data-step="register">Prepare write session</li>
+                  <li data-step="extract">Extract and envelope</li>
+                  <li data-step="price">Estimate cost</li>
+                  <li data-step="commit">Submit proposal</li>
+                  <li data-step="done">Done</li>
+                </ol>
+              </section>
+
+              <section class="ocs-card ocs-ledger">
+                <h3>Network Telemetry</h3>
+                <div class="ocs-ledger-kv">
+                  <span>Queue</span>
+                  <strong data-el="queueDepth">n/a</strong>
+                </div>
+                <div class="ocs-ledger-kv">
+                  <span>Pending</span>
+                  <strong data-el="pendingCount">n/a</strong>
+                </div>
+                <div class="ocs-ledger-kv">
+                  <span>Finalized</span>
+                  <strong data-el="finalizedCount">n/a</strong>
+                </div>
+                <div class="ocs-ledger-feed">
+                  <p class="ocs-feed-head">activity</p>
+                  <ul data-el="txFeed">
+                    <li><span>NOW</span> awaiting first write...</li>
+                  </ul>
+                </div>
+              </section>
+            </div>
+
+            <section class="ocs-card ocs-troubleshoot">
+              <h3>Proposal Flow Troubleshooting</h3>
+              <p data-el="diagSummary" class="ocs-muted">No active failures. Run estimate to capture diagnostics.</p>
+              <ul data-el="diagList" class="ocs-diag-list"></ul>
+              <p data-el="diagHint" class="ocs-status">Next action: connect wallet, estimate proposal cost, then sign proposal.</p>
+            </section>
+
+            <div class="ocs-dev">
+              <h4>Operator Settings</h4>
+              <div class="ocs-dev-grid">
+                <label>Wallet Override
+                  <input data-el="wallet" value="0x742d35Cc6634c0532925a3b844bc9e7595f0beb" />
+                </label>
+                <label>Organization
+                  <input data-el="org" value="example-org" />
+                </label>
+                <label>Validator URL
+                  <input data-el="validatorUrl" value="http://127.0.0.1:8787/ops/v1/content-chain/validator" />
+                </label>
+                <label>Normalizer API URL
+                  <input data-el="normalizerUrl" value="http://127.0.0.1:8088" />
+                </label>
+                <label>Payment Recipient Override
+                  <input data-el="paymentRecipientOverride" placeholder="optional 0x..." />
+                </label>
+                <label>IPFS Mode
+                  <select data-el="ipfsMode">
+                    <option value="validator">validator-hosted binary (server-side CID)</option>
+                    <option value="client">client-provided CID (client-side IPFS)</option>
+                  </select>
+                </label>
+                <label>Client CID (if client mode)
+                  <input data-el="clientIpfsCid" placeholder="Qm... or bafy..." />
+                </label>
+              </div>
+              <div class="ocs-dev-endpoint-health">
+                <p class="ocs-pill" data-el="validatorHealth">validator: unknown</p>
+                <p class="ocs-pill" data-el="normalizerHealth">normalizer: unknown</p>
+              </div>
+              <pre data-el="devOut">{"status":"dev-idle"}</pre>
+            </div>
+          </details>
+        </section>
       </div>
-
-      <section class="ocs-card ocs-progress">
-        <h3>Flow</h3>
-        <ol data-el="steps" class="ocs-steps">
-          <li data-step="connect">Connect wallet</li>
-          <li data-step="register">Prepare write session</li>
-          <li data-step="extract">Extract and envelope</li>
-          <li data-step="price">Estimate cost</li>
-          <li data-step="commit">Commit write</li>
-          <li data-step="done">Done</li>
-        </ol>
-      </section>
-
-      <section data-el="successCard" class="ocs-card ocs-success hidden">
-        <h3>Write Complete</h3>
-        <p class="ocs-muted">Your content is now committed with provenance. Downstream SEE consumers can react to this write event.</p>
-        <div class="ocs-success-links">
-          <a data-el="txLink" target="_blank" rel="noreferrer">View transaction</a>
-          <a data-el="statusLink" target="_blank" rel="noreferrer">Track write status</a>
-        </div>
-        <p data-el="writeState" class="ocs-success-state">Write finalized.</p>
-        <div class="ocs-success-grid">
-          <div>
-            <span>Content ID</span>
-            <code data-el="contentCid">-</code>
-          </div>
-          <div>
-            <span>Transaction</span>
-            <code data-el="txHash">-</code>
-          </div>
-        </div>
-      </section>
-
-      <details class="ocs-dev">
-        <summary>Developer Settings</summary>
-        <div class="ocs-dev-grid">
-          <label>Wallet Override
-            <input data-el="wallet" value="0x742d35Cc6634c0532925a3b844bc9e7595f0beb" />
-          </label>
-          <label>Organization
-            <input data-el="org" value="example-org" />
-          </label>
-          <label>Validator URL
-            <input data-el="validatorUrl" value="http://127.0.0.1:8090" />
-          </label>
-          <label>Normalizer API URL
-            <input data-el="normalizerUrl" value="http://127.0.0.1:8088" />
-          </label>
-          <label>Payment Recipient Override
-            <input data-el="paymentRecipientOverride" placeholder="optional 0x..." />
-          </label>
-        </div>
-        <pre data-el="devOut">{"status":"dev-idle"}</pre>
-      </details>
     </section>
   `;
 }
@@ -184,52 +362,155 @@ const INTENTS = {
   quick: {
     depth: 'L1',
     promptProfile: 'metadata-quick',
-    summary: 'Fast pass for minimal metadata and ownership envelopeing.',
+    priceMultiplier: 0.85,
+    summary: 'Fast pass with lightweight metadata and ownership envelope.',
   },
   balanced: {
     depth: 'L2',
     promptProfile: 'assets-metadata-hierarchy',
+    priceMultiplier: 1,
     summary: 'Balanced depth with strong metadata and hierarchy extraction.',
   },
   deep: {
     depth: 'L3',
     promptProfile: 'deep-graph-analysis',
+    priceMultiplier: 1.35,
     summary: 'Deep extraction for richer contextual graph data.',
   },
 };
 
-export default function decorate(block) {
-  block.textContent = '';
-  block.innerHTML = template();
+function summarizeExtractions(normalized) {
+  const extractions = normalized?.envelopeDraft?.classification?.extractions;
+  if (!Array.isArray(extractions) || extractions.length === 0) {
+    return { total: 0, classes: [] };
+  }
+  const counts = {};
+  extractions.forEach((entry) => {
+    const cls = String(entry?.class || 'unknown');
+    counts[cls] = (counts[cls] || 0) + 1;
+  });
+  const classes = Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, count]) => `${name}:${count}`);
+  return { total: extractions.length, classes };
+}
+
+const STAGE_HELP = {
+  preflight: {
+    label: 'Validate endpoints',
+    detail: 'Checks connectivity to validator and normalizer APIs before wallet and content operations.',
+    endpoint: 'validator /v1/proposals/queue/stats + normalizer /v1/runtime-config',
+  },
+  connect: {
+    label: 'Connect wallet',
+    detail: 'Requests account access from MetaMask and validates selected wallet address.',
+    endpoint: 'window.ethereum eth_requestAccounts',
+  },
+  register: {
+    label: 'Prepare write session',
+    detail: 'Registers the connected client session with validator API.',
+    endpoint: 'validator /v1/register-client',
+  },
+  extract: {
+    label: 'Extract and envelope',
+    detail: 'Uploads file for extraction and maps envelope into deterministic JCR structure.',
+    endpoint: 'normalizer /v1/ingress/normalize-upload + /v1/envelopes/jcr-map',
+  },
+  price: {
+    label: 'Estimate cost',
+    detail: 'Requests proposal fee quote for the current draft and depth profile.',
+    endpoint: 'normalizer /v1/pricing/envelope-quote',
+  },
+  commit: {
+    label: 'Submit proposal',
+    detail: 'Submits payment tx, signs proposal payload, then posts either client CID or validator-hosted binary.',
+    endpoint: 'MetaMask tx/sign + validator /v1/propose-write',
+  },
+  done: {
+    label: 'Done',
+    detail: 'Shows receipt metadata and polls proposal status until final state.',
+    endpoint: 'validator /v1/proposals/{id}/status',
+  },
+};
+
+const RUNTIME_KEY = '__oakContentSupplyChainRuntimeStarted';
+
+function ensureOpsCollapsibleSection(root = document) {
+  const main = root.querySelector?.('main.ocs-runtime-page') || document.querySelector('main.ocs-runtime-page');
+  if (!main || main.querySelector('.section.ocs-ops-collapse-section')) return;
+
+  const telemetrySection = main.querySelector(':scope > .section.ocs-telemetry-section');
+  const operatorSection = main.querySelector(':scope > .section.ocs-operator-settings-section');
+  if (!telemetrySection || !operatorSection) return;
+
+  const collapseSection = document.createElement('div');
+  collapseSection.className = 'section ocs-runtime-section ocs-ops-collapse-section';
+  collapseSection.innerHTML = `
+    <details class="ocs-ops-collapse" open>
+      <summary>Operator Settings, Technical Details & Troubleshooting</summary>
+      <div class="ocs-ops-collapse-body"></div>
+    </details>
+  `;
+
+  const body = collapseSection.querySelector('.ocs-ops-collapse-body');
+  const telemetryBeforeOperator = Boolean(
+    telemetrySection.compareDocumentPosition(operatorSection) & Node.DOCUMENT_POSITION_FOLLOWING,
+  );
+  const first = telemetryBeforeOperator ? telemetrySection : operatorSection;
+  main.insertBefore(collapseSection, first);
+  body.append(telemetrySection, operatorSection);
+}
+
+export function bootContentSupplyChainRuntime(root = document) {
+  if (window[RUNTIME_KEY]) return true;
+  ensureOpsCollapsibleSection(root);
 
   const state = {
     selectedFile: null,
     connectedWallet: null,
-    runtimeConfig: { normalizerMode: 'mock', mockWalletFlow: true },
+    runtimeConfig: { normalizerMode: 'mock', mockWalletFlow: false },
     isRegistered: false,
     discoveredPaymentTarget: null,
+    walletBalanceEth: null,
+    walletChainId: null,
+    walletChainLabel: 'unknown',
+    walletProvider: null,
     latestEnvelope: null,
+    latestNormalization: null,
     latestQuote: null,
+    preparedDraftKey: null,
     selectedIntent: 'balanced',
     busy: false,
     blockchainConfig: null,
+    expectedChainId: null,
+    ipfsMode: 'validator',
     statusPollTimer: null,
     queuePollTimer: null,
+    stageState: {},
+    lastFlowError: '',
+    lastFailedStep: '',
   };
 
-  const q = (name) => block.querySelector(`[data-el="${name}"]`);
+  const q = (name) => root.querySelector(`[data-ocs-el="${name}"], [data-el="${name}"]`);
   const els = {
-    connectBtn: q('connectBtn'),
     writeBtn: q('writeBtn'),
     networkPill: q('networkPill'),
     linkPill: q('linkPill'),
     walletPill: q('walletPill'),
+    walletAddress: q('walletAddress'),
+    walletBalance: q('walletBalance'),
+    walletChain: q('walletChain'),
+    connectWalletBtn: q('connectWalletBtn'),
+    clearWalletBtn: q('clearWalletBtn'),
     filePill: q('filePill'),
     status: q('status'),
     drop: q('drop'),
     file: q('file'),
     steps: q('steps'),
     quoteLabel: q('quoteLabel'),
+    envelopeSummary: q('envelopeSummary'),
+    envelopeEntities: q('envelopeEntities'),
+    envelopeJson: q('envelopeJson'),
     successCard: q('successCard'),
     contentCid: q('contentCid'),
     txHash: q('txHash'),
@@ -247,7 +528,17 @@ export default function decorate(block) {
     validatorUrl: q('validatorUrl'),
     normalizerUrl: q('normalizerUrl'),
     paymentRecipientOverride: q('paymentRecipientOverride'),
+    ipfsMode: q('ipfsMode'),
+    clientIpfsCid: q('clientIpfsCid'),
+    validatorHealth: q('validatorHealth'),
+    normalizerHealth: q('normalizerHealth'),
+    diagSummary: q('diagSummary'),
+    diagList: q('diagList'),
+    diagHint: q('diagHint'),
   };
+
+  const required = ['writeBtn', 'drop', 'file', 'steps', 'quoteLabel', 'envelopeSummary', 'envelopeJson', 'txFeed', 'wallet', 'org', 'validatorUrl', 'normalizerUrl', 'devOut'];
+  if (required.some((key) => !els[key])) return false;
 
   const setStatus = (msg) => {
     els.status.textContent = msg;
@@ -255,6 +546,35 @@ export default function decorate(block) {
 
   const setDev = (data) => {
     els.devOut.textContent = pretty(data);
+  };
+
+  const renderEnvelopePreview = () => {
+    if (!state.latestEnvelope) {
+      els.envelopeSummary.textContent = 'Run estimate to generate an envelope preview from langextract output.';
+      els.envelopeEntities.innerHTML = '';
+      els.envelopeJson.textContent = '{"status":"awaiting-envelope"}';
+      return;
+    }
+
+    const confidence = state.latestNormalization?.confidence;
+    const extractions = state.latestEnvelope?.classification?.extractions;
+    const entityCount = Array.isArray(extractions) ? extractions.length : 0;
+    const sourceName = state.latestNormalization?.fileInfo?.fileName || state.selectedFile?.name || 'artifact';
+    els.envelopeSummary.textContent = `Envelope ready for ${sourceName}. Confidence ${confidence ?? 'n/a'} with ${entityCount} extracted entities.`;
+
+    const classCounts = {};
+    if (Array.isArray(extractions)) {
+      extractions.forEach((entry) => {
+        const cls = String(entry?.class || 'unknown');
+        classCounts[cls] = (classCounts[cls] || 0) + 1;
+      });
+    }
+    const chips = Object.entries(classCounts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([cls, count]) => `<p class="ocs-pill">${cls}: ${count}</p>`)
+      .join('');
+    els.envelopeEntities.innerHTML = chips || '<p class="ocs-pill">No extracted entities</p>';
+    els.envelopeJson.textContent = pretty(state.latestEnvelope);
   };
 
   const appendFeed = (message, level = 'info') => {
@@ -269,10 +589,103 @@ export default function decorate(block) {
     while (els.txFeed.children.length > 8) els.txFeed.removeChild(els.txFeed.lastChild);
   };
 
+  const suggestNextAction = (step) => {
+    if (step === 'preflight') {
+      return `Next action: verify Validator URL (${getValidatorBase()}) and Normalizer URL (${getNormalizerBase()}) are reachable from browser session.`;
+    }
+    if (step === 'register') {
+      return `Next action: verify validator register endpoint at ${buildUrl(getValidatorBase(), '/v1/register-client')} and organization value.`;
+    }
+    if (step === 'extract') {
+      return `Next action: verify extract endpoint at ${buildUrl(getNormalizerBase(), '/v1/ingress/normalize-upload')} and retry with supported file content.`;
+    }
+    if (step === 'price') {
+      return `Next action: verify quote endpoint at ${buildUrl(getNormalizerBase(), '/v1/pricing/envelope-quote')} and retry estimate.`;
+    }
+    if (step === 'commit') {
+      return 'Next action: confirm payment recipient configuration and approve MetaMask transaction + signature prompts.';
+    }
+    return 'Next action: rerun estimate and inspect developer JSON payload for failing request details.';
+  };
+
+  const renderDiagnostics = () => {
+    if (!els.diagList) return;
+    const order = ['preflight', 'connect', 'register', 'extract', 'price', 'commit', 'done'];
+    els.diagList.innerHTML = order
+      .map((step) => {
+        const help = STAGE_HELP[step];
+        const status = state.stageState[step] || 'pending';
+        return `
+          <li class="is-${status}">
+            <div class="ocs-diag-head">
+              <strong>${help.label}</strong>
+              <span class="ocs-diag-status is-${status}">${status}</span>
+            </div>
+            <p class="ocs-diag-detail">${help.detail}</p>
+            <p class="ocs-diag-endpoint"><span>Endpoint:</span> <code>${help.endpoint}</code></p>
+          </li>
+        `;
+      })
+      .join('');
+
+    if (state.lastFlowError) {
+      els.diagSummary.textContent = `Last failure: ${state.lastFlowError}`;
+      els.diagHint.textContent = suggestNextAction(state.lastFailedStep);
+      return;
+    }
+    els.diagSummary.textContent = 'No active failures. Run estimate to capture diagnostics.';
+    els.diagHint.textContent = 'Next action: connect wallet, estimate proposal cost, then sign proposal.';
+  };
+
   const setBusy = (flag) => {
     state.busy = flag;
     els.writeBtn.disabled = flag;
-    els.connectBtn.disabled = flag;
+    if (flag) {
+      els.writeBtn.textContent = 'Processing...';
+      return;
+    }
+    updatePrimaryAction();
+  };
+
+  const currentDraftKey = () => {
+    if (!state.selectedFile || !state.connectedWallet) return null;
+    return [
+      String(state.connectedWallet).toLowerCase(),
+      state.selectedIntent,
+      state.selectedFile.name || 'unnamed',
+      state.selectedFile.size || 0,
+      state.selectedFile.lastModified || 0,
+    ].join('|');
+  };
+
+  const isPreparedDraftCurrent = () => {
+    const key = currentDraftKey();
+    return Boolean(
+      key
+      && state.preparedDraftKey === key
+      && state.latestEnvelope
+      && state.latestQuote?.totalFeeWei,
+    );
+  };
+
+  const resetPreparedDraft = () => {
+    state.preparedDraftKey = null;
+    state.latestEnvelope = null;
+    state.latestNormalization = null;
+    state.latestQuote = null;
+    renderEnvelopePreview();
+  };
+
+  const updateQuoteLabelFromCurrent = () => {
+    if (!state.latestQuote?.totalFeeWei) {
+      els.quoteLabel.textContent = state.connectedWallet ? 'Click "Estimate Proposal Cost"' : 'Connect wallet and estimate proposal cost';
+      return;
+    }
+    const wei = state.latestQuote.totalFeeWei;
+    const eth = formatWeiToEth(wei);
+    const usd = formatUsd((safeNumber(eth, 0) || 0) * guessEthUsdPrice(state.blockchainConfig || {}));
+    const modeHint = state.ipfsMode === 'validator' ? ' | validator binary mode' : ' | client CID mode';
+    els.quoteLabel.textContent = `${eth} ETH (~${usd} USDC)${modeHint}`;
   };
 
   const getNormalizerBase = () => (els.normalizerUrl.value || '').replace(/\/+$/, '');
@@ -291,12 +704,114 @@ export default function decorate(block) {
   const formatFlowError = (step, error) => {
     const hint = endpointHint();
     if (hint && isNetworkError(error)) return `Cannot reach Oak services from this hosted page. ${hint}`;
-    if (step === 'register' && isNetworkError(error)) return `Could not prepare your write session. ${hint || 'Check service connectivity in Developer Settings.'}`;
+    if (step === 'preflight') return describeError(error) || 'Service preflight failed. Check validator/normalizer endpoints.';
+    if (step === 'register' && isNetworkError(error)) return `Could not prepare your write session via ${buildUrl(getValidatorBase(), '/v1/register-client')}. ${hint || 'Check service connectivity in Developer Settings.'}`;
+    if (step === 'extract' && isNetworkError(error)) return `Could not reach normalizer extract endpoint ${buildUrl(getNormalizerBase(), '/v1/ingress/normalize-upload')}. ${hint || 'Check service connectivity in Developer Settings.'}`;
+    if (step === 'price' && isNetworkError(error)) return `Could not reach quote endpoint ${buildUrl(getNormalizerBase(), '/v1/pricing/envelope-quote')}. ${hint || 'Check service connectivity in Developer Settings.'}`;
+    if (step === 'commit' && isNetworkError(error)) {
+      return `Could not submit signed proposal to ${buildUrl(getValidatorBase(), '/v1/propose-write')}. ${
+        hint || 'Validator API unreachable from this browser session.'
+      }`;
+    }
     if (step === 'extract' && /415|unsupported|mime|content type/i.test(String(error?.message || error))) {
       return 'This file type is not supported for semantic extraction yet. For now, use PDF.';
     }
     if (isNetworkError(error)) return `Service connection issue. ${hint || 'Check service URLs in Developer Settings.'}`;
-    return error?.message || String(error);
+    return describeError(error);
+  };
+
+  const setEndpointHealth = (service, ok, detail = '') => {
+    const el = service === 'validator' ? els.validatorHealth : els.normalizerHealth;
+    if (!el) return;
+    el.classList.remove('warn');
+    if (ok) {
+      el.textContent = `${service}: online`;
+      return;
+    }
+    el.classList.add('warn');
+    el.textContent = `${service}: offline${detail ? ` (${detail})` : ''}`;
+  };
+
+  const sleep = (ms) => new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+
+  const probeJson = async (url, retries = 2) => {
+    let lastError = null;
+    for (let attempt = 0; attempt <= retries; attempt += 1) {
+      try {
+        const res = await fetchWithRetry(url, {}, 0, 6000);
+        if (!res.ok) throw new Error(`http ${res.status}`);
+        return res.json();
+      } catch (error) {
+        lastError = error;
+        if (attempt >= retries) break;
+        await sleep(220 * (attempt + 1));
+      }
+    }
+    throw lastError || new Error('endpoint probe failed');
+  };
+
+  const fetchWithRetry = async (url, init = {}, retries = 4, timeoutMs = 45000) => {
+    let lastError = null;
+    for (let attempt = 0; attempt <= retries; attempt += 1) {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const nextInit = { ...init, signal: controller.signal };
+        return await fetch(url, nextInit);
+      } catch (error) {
+        lastError = error;
+        if (error?.name === 'AbortError') {
+          lastError = new Error(`request timeout after ${Math.round(timeoutMs / 1000)}s: ${url}`);
+        }
+        if (attempt >= retries) break;
+        await sleep(350 * (attempt + 1));
+      } finally {
+        window.clearTimeout(timer);
+      }
+    }
+    throw lastError || new Error('fetch failed');
+  };
+
+  const checkEndpoints = async () => {
+    let validatorOk = false;
+    let normalizerOk = false;
+    let validatorErr = '';
+    let normalizerErr = '';
+
+    try {
+      await probeJson(buildUrl(getValidatorBase(), '/v1/proposals/queue/stats'));
+      validatorOk = true;
+    } catch (e) {
+      validatorErr = String(e?.message || e);
+    }
+
+    try {
+      await probeJson(buildUrl(getNormalizerBase(), '/v1/runtime-config'));
+      normalizerOk = true;
+    } catch (e) {
+      normalizerErr = String(e?.message || e);
+    }
+
+    setEndpointHealth('validator', validatorOk, validatorErr);
+    setEndpointHealth('normalizer', normalizerOk, normalizerErr);
+    return {
+      validatorOk,
+      normalizerOk,
+      validatorErr,
+      normalizerErr,
+    };
+  };
+
+  const ensureEndpointReadiness = async () => {
+    const status = await checkEndpoints();
+    if (!status.validatorOk || !status.normalizerOk) {
+      const parts = [];
+      if (!status.validatorOk) parts.push(`validator edge worker unreachable (${status.validatorErr || 'unknown'})`);
+      if (!status.normalizerOk) parts.push(`normalizer service unreachable (${status.normalizerErr || 'unknown'})`);
+      throw new Error(`Endpoint preflight failed: ${parts.join('; ')}`);
+    }
   };
 
   const stopQueuePolling = () => {
@@ -318,9 +833,9 @@ export default function decorate(block) {
       els.queueDepth.textContent = String(queue);
       els.pendingCount.textContent = String(pending);
       els.finalizedCount.textContent = String(finalized);
-      els.linkPill.textContent = 'active';
+      if (els.linkPill) els.linkPill.textContent = 'active';
     } catch (_) {
-      els.linkPill.textContent = 'degraded';
+      if (els.linkPill) els.linkPill.textContent = 'degraded';
     }
   };
 
@@ -338,39 +853,133 @@ export default function decorate(block) {
   };
 
   const clearSteps = () => {
-    ['connect', 'register', 'extract', 'price', 'commit', 'done'].forEach((s) => setStep(s, null));
+    ['preflight', 'connect', 'register', 'extract', 'price', 'commit', 'done'].forEach((s) => setStep(s, null));
+    state.stageState = {};
+    renderDiagnostics();
   };
 
   const markActive = (name) => {
     setStep(name, 'is-active');
+    state.stageState[name] = 'active';
+    renderDiagnostics();
   };
 
   const markDone = (name) => {
     setStep(name, 'is-done');
+    state.stageState[name] = 'done';
+    renderDiagnostics();
   };
 
   const markError = (name) => {
     setStep(name, 'is-error');
+    state.stageState[name] = 'error';
+    renderDiagnostics();
+  };
+
+  const emitWalletState = () => {
+    const connected = Boolean(state.connectedWallet);
+    const shortAddressValue = connected ? shortAddress(state.connectedWallet) : 'not connected';
+    const chainValue = state.walletChainLabel || 'unknown';
+    const balanceValue = state.walletBalanceEth || '-';
+    window.dispatchEvent(new CustomEvent('ocs:wallet-state', {
+      detail: {
+        connected,
+        shortAddress: shortAddressValue,
+        chain: chainValue,
+        balance: balanceValue,
+      },
+    }));
   };
 
   const updateWalletPill = () => {
     if (!state.connectedWallet) {
-      els.walletPill.textContent = 'Not connected';
-      els.walletPill.classList.add('warn');
+      if (els.walletPill) {
+        els.walletPill.textContent = 'Wallet not connected';
+        els.walletPill.classList.add('warn');
+      }
+      if (els.walletAddress) els.walletAddress.textContent = 'not connected';
+      if (els.walletBalance) els.walletBalance.textContent = '- ETH';
+      if (els.walletChain) els.walletChain.textContent = state.walletChainLabel || 'unknown';
+      if (els.connectWalletBtn) els.connectWalletBtn.textContent = 'Connect';
+      if (els.clearWalletBtn) els.clearWalletBtn.classList.add('hidden');
+      if (els.wallet) {
+        els.wallet.readOnly = false;
+        els.wallet.classList.remove('is-locked');
+      }
+      emitWalletState();
+      updateQuoteLabelFromCurrent();
+      updatePrimaryAction();
       return;
     }
     const short = `${state.connectedWallet.slice(0, 10)}...${state.connectedWallet.slice(-8)}`;
-    els.walletPill.textContent = `Connected ${short}`;
-    els.walletPill.classList.remove('warn');
+    if (els.walletPill) {
+      els.walletPill.textContent = `Connected ${short}`;
+      els.walletPill.classList.remove('warn');
+    }
+    if (els.walletAddress) els.walletAddress.textContent = shortAddress(state.connectedWallet);
+    if (els.walletBalance) els.walletBalance.textContent = `${state.walletBalanceEth || '-'} ETH`;
+    if (els.walletChain) els.walletChain.textContent = state.walletChainLabel || 'unknown';
+    if (els.connectWalletBtn) els.connectWalletBtn.textContent = 'Refresh';
+    if (els.clearWalletBtn) els.clearWalletBtn.classList.remove('hidden');
+    if (els.wallet) {
+      els.wallet.value = state.connectedWallet;
+      els.wallet.readOnly = true;
+      els.wallet.classList.add('is-locked');
+    }
+    emitWalletState();
+    updateQuoteLabelFromCurrent();
+    updatePrimaryAction();
+  };
+
+  const hydrateWalletMetrics = async () => {
+    if (!state.connectedWallet) return;
+    if (!window.ethereum?.request) throw new Error('MetaMask not detected');
+    try {
+      const [chainId, balanceWei] = await Promise.all([
+        window.ethereum.request({ method: 'eth_chainId' }),
+        window.ethereum.request({ method: 'eth_getBalance', params: [state.connectedWallet, 'latest'] }),
+      ]);
+      state.walletChainId = chainId;
+      state.walletChainLabel = chainLabelFromId(chainId);
+      state.walletBalanceEth = formatWeiToEth(balanceWei);
+      updateWalletPill();
+    } catch (_e) {
+      state.walletChainId = null;
+      state.walletChainLabel = 'Unknown';
+      state.walletBalanceEth = null;
+      updateWalletPill();
+    }
   };
 
   const updateFilePill = () => {
     if (!state.selectedFile) {
       els.filePill.textContent = 'No file selected';
+      resetPreparedDraft();
+      updateQuoteLabelFromCurrent();
+      updatePrimaryAction();
       return;
     }
     const mb = (state.selectedFile.size / (1024 * 1024)).toFixed(2);
     els.filePill.textContent = `${state.selectedFile.name} (${mb} MB)`;
+    resetPreparedDraft();
+    updateQuoteLabelFromCurrent();
+    updatePrimaryAction();
+  };
+
+  const updatePrimaryAction = () => {
+    if (state.busy) return;
+    if (!state.selectedFile) {
+      els.writeBtn.disabled = true;
+      els.writeBtn.textContent = 'Add content to begin';
+      return;
+    }
+    if (!state.connectedWallet) {
+      els.writeBtn.disabled = false;
+      els.writeBtn.textContent = 'Connect Wallet';
+      return;
+    }
+    els.writeBtn.disabled = false;
+    els.writeBtn.textContent = isPreparedDraftCurrent() ? 'I Wish to Propose This' : 'Estimate Proposal Cost';
   };
 
   const getPaymentRecipient = () => {
@@ -379,13 +988,60 @@ export default function decorate(block) {
   };
 
   const resolveWallet = () => {
-    const candidate = normalizeAddress(state.connectedWallet || els.wallet.value);
+    if (!state.connectedWallet) {
+      throw new Error('Connect MetaMask wallet first.');
+    }
+    const candidate = normalizeAddress(state.connectedWallet);
     if (!isValidAddress(candidate)) {
-      throw new Error('Wallet address is invalid. Open Developer Settings and use a full 0x...40-hex wallet value.');
+      throw new Error('Connected MetaMask wallet address is invalid.');
     }
     els.wallet.value = candidate;
     state.connectedWallet = candidate;
     return candidate;
+  };
+
+  const ensureWalletOnExpectedNetwork = async () => {
+    if (!window.ethereum?.request) throw new Error('MetaMask not detected');
+    if (!state.expectedChainId) return;
+
+    const expected = normalizeChainId(state.expectedChainId);
+    const current = normalizeChainId(await window.ethereum.request({ method: 'eth_chainId' }));
+    if (expected && current === expected) return;
+
+    const expectedName = chainNameForId(expected);
+    try {
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: expected }],
+      });
+      await hydrateWalletMetrics();
+      appendFeed(`wallet switched to ${expectedName}`, 'ok');
+      return;
+    } catch (switchError) {
+      if (switchError?.code === 4902 && expected === '0xaa36a7') {
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: '0xaa36a7',
+            chainName: 'Sepolia',
+            nativeCurrency: { name: 'Sepolia ETH', symbol: 'ETH', decimals: 18 },
+            rpcUrls: ['https://rpc.sepolia.org'],
+            blockExplorerUrls: ['https://sepolia.etherscan.io'],
+          }],
+        });
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0xaa36a7' }],
+        });
+        await hydrateWalletMetrics();
+        appendFeed('wallet switched to Sepolia', 'ok');
+        return;
+      }
+      if (switchError?.code === 4001) {
+        throw new Error(`Switch wallet to ${expectedName} to continue.`);
+      }
+      throw new Error(`Wallet network mismatch. Expected ${expectedName}.`);
+    }
   };
 
   const discoverPaymentTarget = async () => {
@@ -402,7 +1058,8 @@ export default function decorate(block) {
       const root = payload?.data || payload?.config || payload;
       state.blockchainConfig = root;
       const net = inferNetworkName(root);
-      els.networkPill.textContent = net === 'unknown' ? 'unknown network' : net;
+      state.expectedChainId = expectedChainIdForNetwork(net);
+      if (els.networkPill) els.networkPill.textContent = net === 'unknown' ? 'unknown network' : net;
       const candidatePairs = [
         root?.paymentRecipient,
         root?.clusterWalletAddress,
@@ -411,57 +1068,80 @@ export default function decorate(block) {
       ];
       const hit = candidatePairs.find((value) => value && String(value).startsWith('0x'));
       state.discoveredPaymentTarget = hit || null;
-      els.linkPill.textContent = hit ? 'active' : 'partial';
+      if (els.linkPill) els.linkPill.textContent = hit ? 'active' : 'partial';
     } catch (e) {
       state.blockchainConfig = null;
+      state.expectedChainId = null;
       state.discoveredPaymentTarget = null;
-      els.networkPill.textContent = 'offline';
-      els.linkPill.textContent = 'offline';
+      if (els.networkPill) els.networkPill.textContent = 'offline';
+      if (els.linkPill) els.linkPill.textContent = 'offline';
     }
   };
 
   const loadRuntimeConfig = async () => {
+    let runtimeAvailable = true;
     try {
       const res = await fetch(`${getNormalizerBase()}/v1/runtime-config`);
       if (res.ok) state.runtimeConfig = await res.json();
-      setStatus(`Ready (${state.runtimeConfig.normalizerMode} mode)`);
-      appendFeed(`runtime ${state.runtimeConfig.normalizerMode}`, 'info');
+      state.runtimeConfig.mockWalletFlow = false;
     } catch (e) {
+      runtimeAvailable = false;
       const hint = endpointHint();
       setStatus(hint ? `Service unavailable. ${hint}` : 'Service unavailable. Check API URL in Developer Settings.');
       appendFeed('runtime unavailable', 'warn');
     }
+    await checkEndpoints();
     await discoverPaymentTarget();
+    if (runtimeAvailable) {
+      const chainMode = inferNetworkName(state.blockchainConfig || {});
+      const chainLabel = chainMode === 'unknown' ? 'chain unknown' : `chain ${chainMode}`;
+      setStatus(`Ready (normalizer ${state.runtimeConfig.normalizerMode}, ${chainLabel}, MetaMask signing)`);
+      appendFeed(`runtime normalizer=${state.runtimeConfig.normalizerMode}, ${chainLabel}`, 'info');
+    }
+    if (state.connectedWallet) await hydrateWalletMetrics();
     startQueuePolling();
   };
 
-  const connectWallet = async () => {
-    if (state.runtimeConfig.mockWalletFlow) {
-      const candidate = normalizeAddress(els.wallet.value);
-      if (!isValidAddress(candidate)) {
-        const generated = randomHex(20);
-        state.connectedWallet = generated;
-        els.wallet.value = generated;
-        updateWalletPill();
-        setStatus('Mock wallet generated for demo flow');
-        appendFeed('mock wallet generated', 'info');
-        return;
-      }
-      state.connectedWallet = candidate;
-      els.wallet.value = candidate;
-      updateWalletPill();
-      appendFeed('wallet connected (mock)', 'ok');
-      return;
-    }
+  const connectWallet = async ({ interactive = true } = {}) => {
     if (!window.ethereum) throw new Error('MetaMask not detected');
-    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    if (!accounts || !accounts.length) throw new Error('No wallet account available');
+    if (interactive) {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_requestPermissions',
+          params: [{ eth_accounts: {} }],
+        });
+      } catch (permissionError) {
+        if (permissionError?.code === 4001) throw new Error('Wallet connection rejected');
+      }
+    }
+    const accounts = await window.ethereum.request({ method: interactive ? 'eth_requestAccounts' : 'eth_accounts' });
+    if (!accounts || !accounts.length) {
+      if (!interactive) return false;
+      throw new Error('No wallet account available');
+    }
     [state.connectedWallet] = accounts;
     state.connectedWallet = normalizeAddress(state.connectedWallet);
     if (!isValidAddress(state.connectedWallet)) throw new Error('Connected wallet address is invalid.');
+    state.walletProvider = 'metamask';
     els.wallet.value = state.connectedWallet;
+    await ensureWalletOnExpectedNetwork();
+    await hydrateWalletMetrics();
     updateWalletPill();
-    appendFeed('wallet connected', 'ok');
+    appendFeed(interactive ? 'wallet connected' : 'wallet session restored', 'ok');
+    return true;
+  };
+
+  const clearWalletSession = () => {
+    state.connectedWallet = null;
+    state.walletBalanceEth = null;
+    state.walletChainId = null;
+    state.walletChainLabel = 'unknown';
+    state.walletProvider = null;
+    state.isRegistered = false;
+    resetPreparedDraft();
+    updateQuoteLabelFromCurrent();
+    updateWalletPill();
+    appendFeed('wallet session cleared', 'warn');
   };
 
   const ensureRegistration = async () => {
@@ -477,7 +1157,7 @@ export default function decorate(block) {
 
     let res;
     try {
-      res = await fetch(`${getValidatorBase()}/v1/register-client`, {
+      res = await fetchWithRetry(`${getValidatorBase()}/v1/register-client`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: form.toString(),
@@ -514,20 +1194,38 @@ export default function decorate(block) {
       estimatedBytes: sizeBytes,
     };
 
-    const res = await fetch(`${getNormalizerBase()}/v1/pricing/envelope-quote`, {
+    const res = await fetchWithRetry(`${getNormalizerBase()}/v1/pricing/envelope-quote`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error(`quote failed ${res.status}`);
     state.latestQuote = await res.json();
-
-    const wei = state.latestQuote.totalFeeWei;
-    els.quoteLabel.textContent = `${wei} wei`;
+    updateQuoteLabelFromCurrent();
     return state.latestQuote;
   };
 
+  const getQuotePreview = async () => {
+    if (!state.selectedFile) {
+      els.quoteLabel.textContent = 'Add file to estimate';
+      return;
+    }
+    if (!state.connectedWallet) {
+      els.quoteLabel.textContent = 'Connect wallet to estimate proposal';
+      return;
+    }
+
+    try {
+      await getQuote(state.selectedFile.size);
+      appendFeed('cost estimated', 'ok');
+    } catch (error) {
+      els.quoteLabel.textContent = 'Estimate unavailable';
+      appendFeed('cost estimate unavailable', 'warn');
+    }
+  };
+
   const normalizeAndMap = async () => {
+    const startedAt = Date.now();
     const intent = INTENTS[state.selectedIntent];
     const wallet = resolveWallet();
     const form = new FormData();
@@ -538,92 +1236,197 @@ export default function decorate(block) {
     form.append('promptProfile', intent.promptProfile);
     form.append('schemaId', 'schema:doc-envelope');
     form.append('schemaVersion', '1.0.0');
+    const uploadCidMode = state.ipfsMode === 'client' ? 'client' : 'validator';
+    form.append('cidMode', uploadCidMode);
+    if (uploadCidMode === 'client') {
+      const stagedCid = (els.clientIpfsCid?.value || '').trim();
+      if (stagedCid) form.append('sourceCid', stagedCid);
+    }
 
-    const res = await fetch(`${getNormalizerBase()}/v1/ingress/normalize-upload`, {
-      method: 'POST',
-      body: form,
-    });
-    if (!res.ok) throw new Error(`normalize failed ${res.status}: ${await res.text()}`);
+    try {
+      setDev({
+        stage: 'normalize-upload:start',
+        endpoint: `${getNormalizerBase()}/v1/ingress/normalize-upload`,
+        file: state.selectedFile?.name || null,
+        fileSizeBytes: state.selectedFile?.size || null,
+        startedAt: new Date(startedAt).toISOString(),
+      });
+      const uploadStarted = Date.now();
+      const res = await fetchWithRetry(`${getNormalizerBase()}/v1/ingress/normalize-upload`, {
+        method: 'POST',
+        body: form,
+      }, 0, 240000);
+      const uploadElapsedMs = Date.now() - uploadStarted;
+      if (!res.ok) throw new Error(`normalize failed ${res.status}: ${await res.text()}`);
 
-    const normalized = await res.json();
-    state.latestEnvelope = normalized.envelopeDraft;
+      const normalized = await res.json();
+      state.latestEnvelope = normalized.envelopeDraft;
+      state.latestNormalization = normalized;
+      renderEnvelopePreview();
+      const extractionSummary = summarizeExtractions(normalized);
+      if (extractionSummary.total > 0) {
+        appendFeed(
+          `langextract confidence ${normalized.confidence} | ${extractionSummary.total} entities (${extractionSummary.classes.join(', ')})`,
+          'ok',
+        );
+      } else {
+        appendFeed(`langextract returned no entities (confidence ${normalized.confidence})`, 'warn');
+      }
 
-    const jcrRes = await fetch(`${getNormalizerBase()}/v1/envelopes/jcr-map`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ envelope: normalized.envelopeDraft }),
-    });
-    if (!jcrRes.ok) throw new Error(`jcr map failed ${jcrRes.status}`);
-    const jcrMap = await jcrRes.json();
+      setDev({
+        stage: 'normalize-upload:done',
+        uploadElapsedMs,
+        confidence: normalized.confidence,
+        extractionCount: extractionSummary.total,
+      });
 
-    setDev({ stage: 'normalize-map', normalized, jcrMap });
+      const jcrStarted = Date.now();
+      const jcrRes = await fetchWithRetry(`${getNormalizerBase()}/v1/envelopes/jcr-map`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ envelope: normalized.envelopeDraft }),
+      }, 2, 30000);
+      const jcrElapsedMs = Date.now() - jcrStarted;
+      if (!jcrRes.ok) throw new Error(`jcr map failed ${jcrRes.status}`);
+      const jcrMap = await jcrRes.json();
 
-    return normalized;
+      setDev({ stage: 'normalize-map:done', uploadElapsedMs, jcrElapsedMs, normalized, jcrMap });
+      return normalized;
+    } catch (error) {
+      setDev({
+        stage: 'normalize-map:error',
+        message: describeError(error),
+        endpointUpload: `${getNormalizerBase()}/v1/ingress/normalize-upload`,
+        endpointJcrMap: `${getNormalizerBase()}/v1/envelopes/jcr-map`,
+      });
+      throw error;
+    }
   };
 
   const submitWrite = async () => {
-    let wallet;
+    if (!window.ethereum) throw new Error('MetaMask not detected');
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    if (!accounts || !accounts.length) throw new Error('No wallet account available');
+    let [wallet] = accounts;
+    wallet = normalizeAddress(wallet);
+    if (!isValidAddress(wallet)) throw new Error('Connected wallet address is invalid.');
+    els.wallet.value = wallet;
+    state.connectedWallet = wallet;
     let paymentTx;
     let signature;
-
-    if (state.runtimeConfig.mockWalletFlow) {
-      wallet = resolveWallet();
-      paymentTx = randomHex(32);
-    } else {
-      if (!window.ethereum) throw new Error('MetaMask not detected');
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      if (!accounts || !accounts.length) throw new Error('No wallet account available');
-      [wallet] = accounts;
-      wallet = normalizeAddress(wallet);
-      if (!isValidAddress(wallet)) throw new Error('Connected wallet address is invalid.');
-      els.wallet.value = wallet;
-      state.connectedWallet = wallet;
-    }
+    const proposalId = generateProposalIdHex();
+    state.ipfsMode = (els.ipfsMode?.value || 'validator').trim().toLowerCase() === 'client' ? 'client' : 'validator';
 
     const paymentRecipient = getPaymentRecipient();
     if (!paymentRecipient || !paymentRecipient.startsWith('0x')) {
       throw new Error('Payment recipient unavailable. Set override in Developer Settings.');
     }
 
-    if (!state.runtimeConfig.mockWalletFlow) {
-      paymentTx = await window.ethereum.request({
-        method: 'eth_sendTransaction',
-        params: [{
-          from: wallet,
-          to: paymentRecipient,
-          value: `0x${BigInt(state.latestQuote.totalFeeWei).toString(16)}`,
-        }],
+    const paymentValueHex = toHexQuantity(state.latestQuote.totalFeeWei);
+    const transferDraft = {
+      from: wallet,
+      to: paymentRecipient,
+      value: paymentValueHex,
+    };
+
+    // Avoid wallet/provider defaults exceeding local chain gas caps.
+    const MAX_TX_GAS = 16777215n;
+    let txGas = 21000n;
+    try {
+      const estimated = await window.ethereum.request({
+        method: 'eth_estimateGas',
+        params: [transferDraft],
       });
+      const estimate = BigInt(String(estimated || '0x5208'));
+      const buffered = (estimate * 12n) / 10n;
+      txGas = buffered > MAX_TX_GAS ? MAX_TX_GAS : buffered;
+      if (txGas < 21000n) txGas = 21000n;
+    } catch (_estimateError) {
+      txGas = 21000n;
     }
+
+    paymentTx = await window.ethereum.request({
+      method: 'eth_sendTransaction',
+      params: [{ ...transferDraft, gas: toHexQuantity(txGas) }],
+    });
 
     const message = JSON.stringify({
+      proposalId,
+      ipfsMode: state.ipfsMode,
+      clientCid: state.ipfsMode === 'client' ? (els.clientIpfsCid?.value || '').trim() : null,
       envelope: state.latestEnvelope,
       quoteId: state.latestQuote.quoteId,
-      paymentTier: 'standard',
+      paymentTier: state.ipfsMode === 'validator' ? 'priority' : 'standard',
       timestamp: Date.now(),
-      mode: state.runtimeConfig.mockWalletFlow ? 'mock' : 'live',
+      mode: 'live',
     });
-
-    if (state.runtimeConfig.mockWalletFlow) {
-      signature = randomHex(65);
+    signature = await window.ethereum.request({ method: 'personal_sign', params: [message, wallet] });
+    const selectedClientCid = (els.clientIpfsCid?.value || '').trim();
+    let body;
+    let headers = {};
+    if (state.ipfsMode === 'client') {
+      if (!isLikelyIpfsCid(selectedClientCid)) {
+        throw new Error('Client CID mode requires a valid IPFS CID (Qm... or bafy...).');
+      }
+      const form = new URLSearchParams({
+        walletAddress: wallet,
+        message,
+        contentType: 'envelope',
+        paymentTier: 'standard',
+        ethereumTxHash: paymentTx,
+        proposalId,
+        ipfsCid: selectedClientCid,
+        signature,
+      });
+      body = form.toString();
+      headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
     } else {
-      signature = await window.ethereum.request({ method: 'personal_sign', params: [message, wallet] });
+      if (!state.selectedFile) {
+        throw new Error('Validator binary mode requires a file to upload.');
+      }
+      const formData = new FormData();
+      formData.append('file', state.selectedFile, state.selectedFile.name || 'artifact.bin');
+      formData.append('walletAddress', wallet);
+      formData.append('message', message);
+      formData.append('contentType', 'envelope');
+      formData.append('paymentTier', 'priority');
+      formData.append('ethereumTxHash', paymentTx);
+      formData.append('proposalId', proposalId);
+      formData.append('signature', signature);
+      body = formData;
     }
 
-    const form = new URLSearchParams({
-      walletAddress: wallet,
-      message,
-      contentType: 'envelope',
-      paymentTier: 'standard',
-      ethereumTxHash: paymentTx,
-      signature,
-    });
-
-    const res = await fetch(`${getValidatorBase()}/v1/propose-write`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: form.toString(),
-    });
+    const proposeUrl = `${getValidatorBase()}/v1/propose-write`;
+    const fallbackBase = (state.blockchainConfig?.validatorUrl || '').replace(/\/+$/, '');
+    const fallbackUrl = fallbackBase ? `${fallbackBase}/v1/propose-write` : '';
+    const candidates = [proposeUrl, fallbackUrl].filter((url, index, list) => url && list.indexOf(url) === index);
+    let res;
+    let lastNetworkError = null;
+    let activeCandidate = proposeUrl;
+    for (let i = 0; i < candidates.length; i += 1) {
+      activeCandidate = candidates[i];
+      try {
+        res = await fetchWithRetry(activeCandidate, {
+          method: 'POST',
+          headers,
+          body,
+        }, 2);
+        break;
+      } catch (error) {
+        lastNetworkError = error;
+      }
+    }
+    if (!res) {
+      setDev({
+        stage: 'propose-write-network-failure',
+        validatorUrl: proposeUrl,
+        fallbackValidatorUrl: fallbackUrl || null,
+        submittedProposalId: proposalId,
+        ethereumTxHash: paymentTx,
+        error: describeError(lastNetworkError),
+      });
+      throw new Error(`Proposal submission network failure after wallet tx ${paymentTx}: ${describeError(lastNetworkError)}`);
+    }
 
     const raw = await res.text();
     let payload;
@@ -637,8 +1440,11 @@ export default function decorate(block) {
       stage: 'propose-write',
       ok: res.ok,
       status: res.status,
-      proposalId: payload?.proposalId || payload?.data?.proposalId || payload?.id || null,
-      validatorUrl: `${getValidatorBase()}/v1/propose-write`,
+      proposalId: payload?.proposalId || payload?.data?.proposalId || payload?.id || proposalId,
+      submittedProposalId: proposalId,
+      ipfsMode: state.ipfsMode,
+      submittedIpfsCid: state.ipfsMode === 'client' ? selectedClientCid : null,
+      validatorUrl: activeCandidate,
       paymentRecipient,
       ethereumTxHash: paymentTx,
       signature,
@@ -646,9 +1452,13 @@ export default function decorate(block) {
     };
     setDev(detail);
 
-    if (!res.ok) throw new Error(payload?.error || payload?.message || `validator rejected proposal (${res.status})`);
+    if (!res.ok) throw new Error(describePayloadError(payload, `validator rejected proposal (${res.status})`));
 
-    appendFeed(`proposal accepted ${detail.proposalId || ''}`.trim(), 'ok');
+    if (detail.proposalId && detail.proposalId !== proposalId) {
+      appendFeed(`proposal accepted with remapped id ${detail.proposalId}`, 'warn');
+    } else {
+      appendFeed(`proposal accepted ${detail.proposalId || proposalId}`.trim(), 'ok');
+    }
     return detail;
   };
 
@@ -691,14 +1501,32 @@ export default function decorate(block) {
       return;
     }
 
+    if (!state.connectedWallet) {
+      try {
+        await connectWallet();
+      } catch (e) {
+        setStatus(formatFlowError('connect', e));
+        appendFeed(`wallet error: ${formatFlowError('connect', e)}`, 'error');
+        return;
+      }
+    }
+
+    const prepared = isPreparedDraftCurrent();
     clearSteps();
+    state.lastFlowError = '';
+    state.lastFailedStep = '';
+    renderDiagnostics();
     setBusy(true);
-    setStatus('Starting flow...');
-    appendFeed('write flow started', 'info');
+    setStatus(prepared ? 'Submitting signed proposal...' : 'Preparing proposal estimate...');
+    appendFeed(prepared ? 'proposal signing flow started' : 'proposal estimate flow started', 'info');
 
     try {
+      markActive('preflight');
+      await ensureEndpointReadiness();
+      markDone('preflight');
+
       markActive('connect');
-      if (!state.connectedWallet) await connectWallet();
+      await ensureWalletOnExpectedNetwork();
       markDone('connect');
 
       markActive('register');
@@ -706,32 +1534,45 @@ export default function decorate(block) {
       await ensureRegistration();
       markDone('register');
 
-      markActive('extract');
-      const normalized = await normalizeAndMap();
+      let normalized = null;
+      if (!prepared) {
+        markActive('extract');
+        normalized = await normalizeAndMap();
+        markDone('extract');
+
+        markActive('price');
+        await getQuote(normalized.fileInfo.sizeBytes);
+        markDone('price');
+
+        state.preparedDraftKey = currentDraftKey();
+        setStatus('Estimate ready. Review cost, then click "I Wish to Propose This".');
+        appendFeed('proposal estimate ready; awaiting signature', 'ok');
+        return;
+      }
+
       markDone('extract');
-
-      markActive('price');
-      await getQuote(normalized.fileInfo.sizeBytes);
       markDone('price');
-
       markActive('commit');
       const result = await submitWrite();
       markDone('commit');
 
       markActive('done');
       markDone('done');
+      state.lastFlowError = '';
+      state.lastFailedStep = '';
+      renderDiagnostics();
       els.successCard.classList.remove('hidden');
-      els.contentCid.textContent = normalized?.fileInfo?.contentCid || '-';
+      els.contentCid.textContent = state.latestEnvelope?.source?.contentCid || '-';
       els.txHash.textContent = result?.ethereumTxHash || '-';
-      const network = state.runtimeConfig.mockWalletFlow ? 'mock' : inferNetworkName(state.blockchainConfig);
+      const network = inferNetworkName(state.blockchainConfig);
       const txUrl = etherscanTxUrl(network, result?.ethereumTxHash);
-      if (txUrl && !state.runtimeConfig.mockWalletFlow) {
+      if (txUrl) {
         els.txLink.href = txUrl;
         els.txLink.textContent = network === 'sepolia' ? 'View transaction (Sepolia Etherscan)' : 'View transaction (Etherscan)';
         els.txLink.classList.remove('is-disabled');
       } else {
         els.txLink.removeAttribute('href');
-        els.txLink.textContent = 'Demo receipt (mock mode)';
+        els.txLink.textContent = 'View transaction';
         els.txLink.classList.add('is-disabled');
       }
       const proposalStatusUrl = result?.proposalId
@@ -741,8 +1582,10 @@ export default function decorate(block) {
       els.statusLink.textContent = result?.proposalId ? 'Track write status' : 'View queue insights';
       els.writeState.textContent = result?.proposalId ? `Write accepted. Proposal ID: ${result.proposalId}` : 'Write accepted. Tracking by queue insights.';
       startStatusPolling(result?.proposalId);
-      setStatus('Content written to Oak successfully');
+      setStatus('Proposal committed to the distributed fabric');
       appendFeed('content committed and receipted', 'ok');
+      resetPreparedDraft();
+      updateQuoteLabelFromCurrent();
     } catch (e) {
       stopStatusPolling();
       const active = els.steps.querySelector('.is-active');
@@ -750,8 +1593,12 @@ export default function decorate(block) {
       if (active) {
         markError(activeStep);
       }
-      setStatus(formatFlowError(activeStep, e));
-      appendFeed(`flow error: ${formatFlowError(activeStep, e)}`, 'error');
+      const rendered = formatFlowError(activeStep, e);
+      state.lastFlowError = rendered;
+      state.lastFailedStep = activeStep || '';
+      renderDiagnostics();
+      setStatus(rendered);
+      appendFeed(`flow error: ${rendered}`, 'error');
     } finally {
       setBusy(false);
     }
@@ -761,14 +1608,18 @@ export default function decorate(block) {
     state.selectedIntent = intent;
     const cfg = INTENTS[intent];
     els.intentSummary.textContent = cfg.summary;
-    block.querySelectorAll('.ocs-intent-btn').forEach((btn) => {
+    root.querySelectorAll('.ocs-intent-btn').forEach((btn) => {
       btn.classList.toggle('is-active', btn.getAttribute('data-intent') === intent);
     });
+    resetPreparedDraft();
+    updateQuoteLabelFromCurrent();
+    updatePrimaryAction();
   };
 
   const setFile = (file) => {
     state.selectedFile = file;
     updateFilePill();
+    updatePrimaryAction();
   };
 
   els.drop.addEventListener('click', (event) => {
@@ -801,37 +1652,120 @@ export default function decorate(block) {
     setFile(els.file.files[0] || null);
   });
 
-  els.connectBtn.addEventListener('click', async () => {
+  els.writeBtn.addEventListener('click', writeFlow);
+  if (els.connectWalletBtn) {
+    els.connectWalletBtn.addEventListener('click', async () => {
+      try {
+        await connectWallet({ interactive: true });
+        setStatus('Wallet connected');
+        updateQuoteLabelFromCurrent();
+      } catch (e) {
+        setStatus(formatFlowError('connect', e));
+        appendFeed(`wallet error: ${formatFlowError('connect', e)}`, 'error');
+      }
+    });
+  }
+  if (els.clearWalletBtn) els.clearWalletBtn.addEventListener('click', clearWalletSession);
+  window.addEventListener('ocs:wallet-connect-request', async () => {
     try {
-      setStatus('Connecting wallet...');
-      await connectWallet();
+      await connectWallet({ interactive: true });
       setStatus('Wallet connected');
-      markDone('connect');
+      updateQuoteLabelFromCurrent();
     } catch (e) {
-      setStatus(`Connect failed: ${e.message}`);
-      markError('connect');
+      setStatus(formatFlowError('connect', e));
+      appendFeed(`wallet error: ${formatFlowError('connect', e)}`, 'error');
     }
   });
+  window.addEventListener('ocs:wallet-clear-request', () => {
+    clearWalletSession();
+  });
 
-  els.writeBtn.addEventListener('click', writeFlow);
-
-  block.querySelectorAll('.ocs-intent-btn').forEach((btn) => {
+  root.querySelectorAll('.ocs-intent-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       setIntent(btn.getAttribute('data-intent'));
     });
   });
 
-  [els.validatorUrl, els.normalizerUrl, els.paymentRecipientOverride].forEach((input) => {
+  [els.validatorUrl, els.normalizerUrl, els.paymentRecipientOverride].filter(Boolean).forEach((input) => {
     input.addEventListener('change', async () => {
       stopStatusPolling();
       stopQueuePolling();
       await loadRuntimeConfig();
+      await getQuotePreview();
     });
   });
+
+  if (els.ipfsMode) {
+    els.ipfsMode.addEventListener('change', () => {
+      state.ipfsMode = (els.ipfsMode.value || 'validator').trim().toLowerCase() === 'client' ? 'client' : 'validator';
+      resetPreparedDraft();
+      updateQuoteLabelFromCurrent();
+    });
+  }
+
+  if (window.ethereum?.on) {
+    window.ethereum.on('accountsChanged', async (accounts) => {
+      const [next] = accounts || [];
+      if (!next) {
+        clearWalletSession();
+        return;
+      }
+      const normalized = normalizeAddress(next);
+      if (!isValidAddress(normalized)) return;
+      if (normalized.toLowerCase() === String(state.connectedWallet || '').toLowerCase()) return;
+      state.connectedWallet = normalized;
+      state.isRegistered = false;
+      resetPreparedDraft();
+      await hydrateWalletMetrics();
+      updateWalletPill();
+      appendFeed('wallet account changed', 'warn');
+      updateQuoteLabelFromCurrent();
+    });
+    window.ethereum.on('chainChanged', async (chainId) => {
+      state.walletChainId = chainId;
+      state.walletChainLabel = chainLabelFromId(chainId);
+      resetPreparedDraft();
+      await hydrateWalletMetrics();
+      updateWalletPill();
+      appendFeed(`network changed to ${state.walletChainLabel}`, 'warn');
+      const expected = normalizeChainId(state.expectedChainId);
+      const current = normalizeChainId(chainId);
+      if (expected && current && expected !== current) {
+        setStatus(`Wallet is on ${chainNameForId(current)}. Switch to ${chainNameForId(expected)}.`);
+        appendFeed(`wallet chain mismatch (expected ${chainNameForId(expected)})`, 'error');
+      }
+    });
+  }
 
   clearSteps();
   updateWalletPill();
   updateFilePill();
   setIntent(state.selectedIntent);
+  updatePrimaryAction();
+  updateQuoteLabelFromCurrent();
   loadRuntimeConfig();
+  window.addEventListener('beforeunload', (event) => {
+    if (!state.busy) return;
+    event.preventDefault();
+    event.returnValue = '';
+  });
+  (async () => {
+    try {
+      const restored = await connectWallet({ interactive: false });
+      if (restored) {
+        updateQuoteLabelFromCurrent();
+        setStatus('Wallet restored from MetaMask session');
+      }
+    } catch (_e) {
+      // Keep disconnected state when wallet is unavailable/unauthorized.
+    }
+  })();
+  window[RUNTIME_KEY] = true;
+  return true;
+}
+
+export default function decorate(block) {
+  block.textContent = '';
+  block.innerHTML = template();
+  bootContentSupplyChainRuntime(block);
 }

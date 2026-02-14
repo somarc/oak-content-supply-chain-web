@@ -1,0 +1,16 @@
+.content-supply-chain-envelope .ocs-envelope-card {
+  margin: 0;
+}
+
+.content-supply-chain-envelope .ocs-envelope-json {
+  margin: 0.7rem 0 0;
+  border: 1px solid #a4a4a4;
+  border-radius: 10px;
+  background: #ebebeb;
+  color: #1f1f1f;
+  max-height: 430px;
+  overflow: auto;
+  padding: 0.72rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
