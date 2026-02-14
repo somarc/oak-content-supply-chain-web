@@ -141,6 +141,20 @@ function readFooterMetaTable(footer) {
   return Object.keys(data).length ? data : null;
 }
 
+function readFooterMetaBlockRows(footer) {
+  const block = footer.querySelector('.footer-meta');
+  if (!block) return null;
+  const data = {};
+  [...block.querySelectorAll(':scope > div')].forEach((row) => {
+    const cells = [...row.querySelectorAll(':scope > div')];
+    if (cells.length < 2) return;
+    const key = (cells[0].textContent || '').trim();
+    if (!key || /footer meta/i.test(key) || key === '---') return;
+    data[key] = (cells[1].textContent || '').trim();
+  });
+  return Object.keys(data).length ? data : null;
+}
+
 function readFooterMetaFlatPairs(footer) {
   const lines = [...footer.querySelectorAll('p, li, div')]
     .map((el) => (el.textContent || '').trim())
@@ -207,6 +221,13 @@ export default async function decorate(block) {
   const footerMetaData = readFooterMetaTable(footer);
   if (footerMetaData) {
     buildFooterGridFromData(footer, footerMetaData);
+    block.append(footer);
+    return;
+  }
+
+  const footerMetaBlockData = readFooterMetaBlockRows(footer);
+  if (footerMetaBlockData) {
+    buildFooterGridFromData(footer, footerMetaBlockData);
     block.append(footer);
     return;
   }

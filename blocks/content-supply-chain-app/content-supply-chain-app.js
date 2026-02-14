@@ -433,8 +433,6 @@ const STAGE_HELP = {
   },
 };
 
-const RUNTIME_KEY = '__oakContentSupplyChainRuntimeStarted';
-
 function ensureOpsCollapsibleSection(root = document) {
   const main = root.querySelector?.('main.ocs-runtime-page') || document.querySelector('main.ocs-runtime-page');
   if (!main || main.querySelector('.section.ocs-ops-collapse-section')) return;
@@ -446,7 +444,7 @@ function ensureOpsCollapsibleSection(root = document) {
   const collapseSection = document.createElement('div');
   collapseSection.className = 'section ocs-runtime-section ocs-ops-collapse-section';
   collapseSection.innerHTML = `
-    <details class="ocs-ops-collapse" open>
+    <details class="ocs-ops-collapse">
       <summary>Operator Settings, Technical Details & Troubleshooting</summary>
       <div class="ocs-ops-collapse-body"></div>
     </details>
@@ -462,8 +460,13 @@ function ensureOpsCollapsibleSection(root = document) {
 }
 
 export function bootContentSupplyChainRuntime(root = document) {
-  if (window[RUNTIME_KEY]) return true;
-  ensureOpsCollapsibleSection(root);
+  const scope = root && typeof root.querySelector === 'function' ? root : document;
+  const mainEl = (
+    root && typeof root.closest === 'function' ? root.closest('main') : null
+  ) || scope.querySelector('main.ocs-runtime-page') || document.querySelector('main.ocs-runtime-page');
+  if (mainEl?.dataset?.ocsRuntimeBooted === 'true') return true;
+  ensureOpsCollapsibleSection(scope);
+  mainEl?.classList.add('ocs-stage-mode');
 
   const state = {
     selectedFile: null,
@@ -491,7 +494,7 @@ export function bootContentSupplyChainRuntime(root = document) {
     lastFailedStep: '',
   };
 
-  const q = (name) => root.querySelector(`[data-ocs-el="${name}"], [data-el="${name}"]`);
+  const q = (name) => scope.querySelector(`[data-ocs-el="${name}"], [data-el="${name}"]`);
   const els = {
     writeBtn: q('writeBtn'),
     networkPill: q('networkPill'),
@@ -539,6 +542,53 @@ export function bootContentSupplyChainRuntime(root = document) {
 
   const required = ['writeBtn', 'drop', 'file', 'steps', 'quoteLabel', 'envelopeSummary', 'envelopeJson', 'txFeed', 'wallet', 'org', 'validatorUrl', 'normalizerUrl', 'devOut'];
   if (required.some((key) => !els[key])) return false;
+
+  const setStageEngaged = () => {
+    mainEl?.classList.add('ocs-stage-engaged');
+  };
+
+  const revealPrimaryPanels = () => {
+    mainEl?.classList.add('ocs-panels-visible');
+  };
+
+  const ensureWalletHelpModal = () => {
+    let modal = document.querySelector('.ocs-wallet-help-modal');
+    if (modal) return modal;
+    modal = document.createElement('div');
+    modal.className = 'ocs-wallet-help-modal hidden';
+    modal.innerHTML = `
+      <div class="ocs-wallet-help-backdrop" data-wallet-help-close="backdrop"></div>
+      <section class="ocs-wallet-help-dialog" role="dialog" aria-modal="true" aria-labelledby="ocs-wallet-help-title">
+        <header class="ocs-wallet-help-head">
+          <h3 id="ocs-wallet-help-title">Connect a Wallet</h3>
+          <button type="button" class="ocs-wallet-help-close" data-wallet-help-close="button" aria-label="Close">×</button>
+        </header>
+        <p class="ocs-wallet-help-copy">No EVM wallet provider was detected in this browser. Install a wallet extension or app, then refresh and connect.</p>
+        <div class="ocs-wallet-help-grid">
+          <a href="https://metamask.io/download/" target="_blank" rel="noreferrer">MetaMask</a>
+          <a href="https://www.coinbase.com/wallet" target="_blank" rel="noreferrer">Coinbase Wallet</a>
+          <a href="https://rabby.io/" target="_blank" rel="noreferrer">Rabby</a>
+          <a href="https://walletconnect.com/" target="_blank" rel="noreferrer">WalletConnect</a>
+        </div>
+        <p class="ocs-wallet-help-note">Wallets are used to sign transactions and prove ownership for Sepolia proposal writes.</p>
+      </section>
+    `;
+    modal.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (!target.dataset.walletHelpClose) return;
+      modal.classList.add('hidden');
+      modal.classList.remove('is-open');
+    });
+    document.body.append(modal);
+    return modal;
+  };
+
+  const showWalletHelpModal = () => {
+    const modal = ensureWalletHelpModal();
+    modal.classList.remove('hidden');
+    modal.classList.add('is-open');
+  };
 
   const setStatus = (msg) => {
     els.status.textContent = msg;
@@ -1103,7 +1153,10 @@ export function bootContentSupplyChainRuntime(root = document) {
   };
 
   const connectWallet = async ({ interactive = true } = {}) => {
-    if (!window.ethereum) throw new Error('MetaMask not detected');
+    if (!window.ethereum) {
+      if (interactive) showWalletHelpModal();
+      throw new Error('No wallet provider detected. Install MetaMask or another EVM wallet.');
+    }
     if (interactive) {
       try {
         await window.ethereum.request({
@@ -1496,6 +1549,7 @@ export function bootContentSupplyChainRuntime(root = document) {
 
   const writeFlow = async () => {
     if (state.busy) return;
+    setStageEngaged();
     if (!state.selectedFile) {
       setStatus('Add a file first');
       return;
@@ -1517,6 +1571,7 @@ export function bootContentSupplyChainRuntime(root = document) {
     state.lastFailedStep = '';
     renderDiagnostics();
     setBusy(true);
+    if (!prepared) revealPrimaryPanels();
     setStatus(prepared ? 'Submitting signed proposal...' : 'Preparing proposal estimate...');
     appendFeed(prepared ? 'proposal signing flow started' : 'proposal estimate flow started', 'info');
 
@@ -1538,6 +1593,7 @@ export function bootContentSupplyChainRuntime(root = document) {
       if (!prepared) {
         markActive('extract');
         normalized = await normalizeAndMap();
+        revealPrimaryPanels();
         markDone('extract');
 
         markActive('price');
@@ -1605,6 +1661,7 @@ export function bootContentSupplyChainRuntime(root = document) {
   };
 
   const setIntent = (intent) => {
+    setStageEngaged();
     state.selectedIntent = intent;
     const cfg = INTENTS[intent];
     els.intentSummary.textContent = cfg.summary;
@@ -1617,12 +1674,14 @@ export function bootContentSupplyChainRuntime(root = document) {
   };
 
   const setFile = (file) => {
+    setStageEngaged();
     state.selectedFile = file;
     updateFilePill();
     updatePrimaryAction();
   };
 
   els.drop.addEventListener('click', (event) => {
+    setStageEngaged();
     if (event.target === els.file) return;
     try {
       if (typeof els.file.showPicker === 'function') {
@@ -1643,6 +1702,7 @@ export function bootContentSupplyChainRuntime(root = document) {
   });
   els.drop.addEventListener('drop', (e) => {
     e.preventDefault();
+    setStageEngaged();
     els.drop.classList.remove('is-drag');
     const [file] = e.dataTransfer.files;
     setFile(file || null);
@@ -1655,6 +1715,7 @@ export function bootContentSupplyChainRuntime(root = document) {
   els.writeBtn.addEventListener('click', writeFlow);
   if (els.connectWalletBtn) {
     els.connectWalletBtn.addEventListener('click', async () => {
+      setStageEngaged();
       try {
         await connectWallet({ interactive: true });
         setStatus('Wallet connected');
@@ -1667,6 +1728,7 @@ export function bootContentSupplyChainRuntime(root = document) {
   }
   if (els.clearWalletBtn) els.clearWalletBtn.addEventListener('click', clearWalletSession);
   window.addEventListener('ocs:wallet-connect-request', async () => {
+    setStageEngaged();
     try {
       await connectWallet({ interactive: true });
       setStatus('Wallet connected');
@@ -1760,7 +1822,7 @@ export function bootContentSupplyChainRuntime(root = document) {
       // Keep disconnected state when wallet is unavailable/unauthorized.
     }
   })();
-  window[RUNTIME_KEY] = true;
+  if (mainEl?.dataset) mainEl.dataset.ocsRuntimeBooted = 'true';
   return true;
 }
 
