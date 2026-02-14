@@ -150,11 +150,77 @@ main.ocs-runtime-page.ocs-stage-engaged .section.ocs-stage-rail-section {
     grid-row: 2;
     margin: 0;
   }
+
+  main.ocs-runtime-page.ocs-processing-lx .section.ocs-insights-section {
+    grid-column: 2;
+    grid-row: 2 / span 2;
+  }
+
+  main.ocs-runtime-page.ocs-processing-lx .section.ocs-envelope-section {
+    display: none;
+  }
 }
 
 main.ocs-runtime-page .section.ocs-insights-section,
 main.ocs-runtime-page .section.ocs-envelope-section {
   transition: opacity 260ms ease, transform 300ms ease;
+}
+
+main.ocs-runtime-page.ocs-processing-lx .section.ocs-insights-section .ocs-card {
+  position: relative;
+  min-height: 340px;
+  background: linear-gradient(180deg, rgb(248 248 248 / 70%), rgb(236 236 236 / 68%));
+}
+
+main.ocs-runtime-page.ocs-processing-lx .section.ocs-insights-section .ocs-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+main.ocs-runtime-page.ocs-processing-lx .section.ocs-insights-section .ocs-card::before {
+  content: '';
+  position: absolute;
+  inset: 48px 16px 16px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgb(188 188 188 / 24%) 0%, rgb(245 245 245 / 52%) 48%, rgb(188 188 188 / 24%) 100%),
+    repeating-linear-gradient(180deg, rgb(40 40 40 / 9%) 0 14px, transparent 14px 28px);
+  background-size: 220% 100%, 100% 100%;
+  animation: ocs-processing-shimmer 2s linear infinite;
+}
+
+main.ocs-runtime-page.ocs-processing-lx .section.ocs-insights-section .ocs-card::after {
+  content: 'LangExtract + envelope mapping in progress';
+  position: absolute;
+  left: 22px;
+  bottom: 24px;
+  padding-left: 30px;
+  color: #3a3f4b;
+  font: 700 0.74rem/1.2 var(--mono-font-family);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+main.ocs-runtime-page.ocs-processing-lx .section.ocs-insights-section .ocs-card h3::after {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-left: 8px;
+  border: 2px solid #7a8cb5;
+  border-right-color: #6ef2e1;
+  border-radius: 999px;
+  vertical-align: -2px;
+  animation: ocs-processing-spin 1s linear infinite;
+}
+
+@keyframes ocs-processing-shimmer {
+  0% { background-position: 0 0, 0 0; }
+  100% { background-position: 220% 0, 0 0; }
+}
+
+@keyframes ocs-processing-spin {
+  to { transform: rotate(360deg); }
 }
 
 main.ocs-runtime-page .section.ocs-ops-collapse-section {

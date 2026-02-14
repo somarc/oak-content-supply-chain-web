@@ -689,6 +689,8 @@ export function bootContentSupplyChainRuntime(root = document) {
 
   const setBusy = (flag) => {
     state.busy = flag;
+    mainEl?.classList.toggle('ocs-busy', flag);
+    if (!flag) mainEl?.classList.remove('ocs-processing-lx');
     els.writeBtn.disabled = flag;
     if (flag) {
       els.writeBtn.textContent = 'Processing...';
@@ -911,18 +913,29 @@ export function bootContentSupplyChainRuntime(root = document) {
   const markActive = (name) => {
     setStep(name, 'is-active');
     state.stageState[name] = 'active';
+    if (name === 'extract' || name === 'price') {
+      mainEl?.classList.add('ocs-processing-lx');
+    } else {
+      mainEl?.classList.remove('ocs-processing-lx');
+    }
     renderDiagnostics();
   };
 
   const markDone = (name) => {
     setStep(name, 'is-done');
     state.stageState[name] = 'done';
+    if (name === 'extract' || name === 'price') {
+      mainEl?.classList.remove('ocs-processing-lx');
+    }
     renderDiagnostics();
   };
 
   const markError = (name) => {
     setStep(name, 'is-error');
     state.stageState[name] = 'error';
+    if (name === 'extract' || name === 'price') {
+      mainEl?.classList.remove('ocs-processing-lx');
+    }
     renderDiagnostics();
   };
 
@@ -1153,6 +1166,30 @@ export function bootContentSupplyChainRuntime(root = document) {
   };
 
   const connectWallet = async ({ interactive = true } = {}) => {
+    const bridge = window.__ocsWalletBridge;
+    if (bridge?.connect) {
+      const detail = await bridge.connect(interactive);
+      if (!detail?.connected) {
+        if (!interactive) return false;
+        throw new Error('No wallet account available');
+      }
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      if (!accounts?.length) {
+        if (!interactive) return false;
+        throw new Error('No wallet account available');
+      }
+      [state.connectedWallet] = accounts;
+      state.connectedWallet = normalizeAddress(state.connectedWallet);
+      if (!isValidAddress(state.connectedWallet)) throw new Error('Connected wallet address is invalid.');
+      state.walletProvider = 'metamask';
+      els.wallet.value = state.connectedWallet;
+      await ensureWalletOnExpectedNetwork();
+      await hydrateWalletMetrics();
+      updateWalletPill();
+      appendFeed(interactive ? 'wallet connected' : 'wallet session restored', 'ok');
+      return true;
+    }
+
     if (!window.ethereum) {
       if (interactive) showWalletHelpModal();
       throw new Error('No wallet provider detected. Install MetaMask or another EVM wallet.');
