@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Oak Content Supply Chain favicon">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d0f16" />
+      <stop offset="100%" stop-color="#171c2d" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7ff0df" />
+      <stop offset="100%" stop-color="#9ab4ff" />
+    </linearGradient>
+  </defs>
+
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#bg)" stroke="#2f364d" stroke-width="2" />
+
+  <polygon points="32,9 40,14 40,24 32,29 24,24 24,14" fill="none" stroke="url(#accent)" stroke-width="2.4" />
+  <line x1="32" y1="29" x2="32" y2="47" stroke="url(#accent)" stroke-width="2.4" stroke-linecap="round" />
+  <path d="M24 45c2.7-2.7 5.6-4.1 8-4.3 2.5-.2 5.5 1.1 8 4.3" fill="none" stroke="url(#accent)" stroke-width="2.4" stroke-linecap="round" />
+
+  <path d="M19 30l7-4" stroke="#8993ad" stroke-width="2.2" stroke-linecap="round" />
+  <path d="M45 30l-7-4" stroke="#8993ad" stroke-width="2.2" stroke-linecap="round" />
+  <path d="M32 36l-7-5" stroke="#8993ad" stroke-width="2.2" stroke-linecap="round" />
+  <path d="M32 36l7-5" stroke="#8993ad" stroke-width="2.2" stroke-linecap="round" />
+
+  <polygon points="14,26 19,29 19,35 14,38 9,35 9,29" fill="none" stroke="url(#accent)" stroke-width="2" />
+  <polygon points="50,26 55,29 55,35 50,38 45,35 45,29" fill="none" stroke="url(#accent)" stroke-width="2" />
+
+  <text x="14" y="34" text-anchor="middle" fill="#7ff0df" font-size="7" font-family="monospace" font-weight="700">#</text>
+  <text x="50" y="34" text-anchor="middle" fill="#7ff0df" font-size="7" font-family="monospace" font-weight="700">#</text>
+</svg>

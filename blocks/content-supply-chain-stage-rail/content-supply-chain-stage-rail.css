@@ -269,6 +269,23 @@ main.ocs-runtime-page.ocs-processing-lx .section.ocs-insights-section .ocs-card 
   50% { transform: translateY(-1px); }
 }
 
+@keyframes ocs-propose-pulse {
+  0%, 100% {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 14%),
+      0 0 0 1px rgb(124 231 212 / 26%),
+      0 0 18px rgb(124 231 212 / 24%),
+      0 8px 20px rgb(0 0 0 / 28%);
+  }
+  50% {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 18%),
+      0 0 0 1px rgb(124 231 212 / 44%),
+      0 0 30px rgb(124 231 212 / 42%),
+      0 10px 24px rgb(0 0 0 / 34%);
+  }
+}
+
 main.ocs-runtime-page .section.ocs-ops-collapse-section {
   position: sticky;
   bottom: 0.7rem;
@@ -586,6 +603,30 @@ main.ocs-runtime-page .section:not(.ocs-stage-rail-section) .ocs-pill {
   border-radius: 999px;
 }
 
+.ocs-btn.is-propose-ready {
+  border-color: #7ce7d4;
+  background:
+    linear-gradient(90deg, rgb(124 231 212 / 22%), rgb(173 185 255 / 22%)),
+    #11161f;
+  color: #f8fcff;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 14%),
+    0 0 0 1px rgb(124 231 212 / 30%),
+    0 0 24px rgb(124 231 212 / 34%),
+    0 8px 20px rgb(0 0 0 / 28%);
+  animation: ocs-propose-pulse 1.55s ease-in-out infinite;
+}
+
+.ocs-btn.is-propose-ready:hover {
+  filter: none;
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 16%),
+    0 0 0 1px rgb(124 231 212 / 44%),
+    0 0 30px rgb(124 231 212 / 44%),
+    0 10px 24px rgb(0 0 0 / 34%);
+}
+
 .ocs-status {
   margin: 0.6rem 0 0;
   min-height: 1.2rem;
@@ -785,5 +826,11 @@ main.ocs-runtime-page .section:not(.ocs-stage-rail-section) .ocs-pill {
 
   .ocs-rail-snapshot-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ocs-btn.is-propose-ready {
+    animation: none;
   }
 }

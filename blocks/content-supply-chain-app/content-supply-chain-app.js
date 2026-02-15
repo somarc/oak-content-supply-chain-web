@@ -218,12 +218,12 @@ function template() {
           </div>
 
           <div data-el="drop" class="ocs-dropzone">
-            <input data-el="file" type="file" class="ocs-file-input" />
+            <input data-el="file" type="file" name="source_file" class="ocs-file-input" />
             <p class="ocs-drop-title">Drop PDF / TEXT payload</p>
             <p class="ocs-drop-sub">or click to browse</p>
           </div>
 
-          <label class="ocs-label" for="ocs-intent">Extraction Intent</label>
+          <p class="ocs-label">Extraction Intent</p>
           <div id="ocs-intent" class="ocs-intent">
             <button type="button" data-intent="quick" class="ocs-intent-btn">Quick</button>
             <button type="button" data-intent="balanced" class="ocs-intent-btn is-active">Balanced</button>
@@ -321,28 +321,28 @@ function template() {
               <h4>Operator Settings</h4>
               <div class="ocs-dev-grid">
                 <label>Wallet Override
-                  <input data-el="wallet" value="0x742d35Cc6634c0532925a3b844bc9e7595f0beb" />
+                  <input data-el="wallet" name="wallet" value="0x742d35Cc6634c0532925a3b844bc9e7595f0beb" />
                 </label>
                 <label>Organization
-                  <input data-el="org" value="example-org" />
+                  <input data-el="org" name="organization" value="example-org" />
                 </label>
                 <label>Validator URL
-                  <input data-el="validatorUrl" value="http://127.0.0.1:8787/ops/v1/content-chain/validator" />
+                  <input data-el="validatorUrl" name="validator_url" value="http://127.0.0.1:8787/ops/v1/content-chain/validator" />
                 </label>
                 <label>Normalizer API URL
-                  <input data-el="normalizerUrl" value="http://127.0.0.1:8088" />
+                  <input data-el="normalizerUrl" name="normalizer_url" value="http://127.0.0.1:8088" />
                 </label>
                 <label>Payment Recipient Override
-                  <input data-el="paymentRecipientOverride" placeholder="optional 0x..." />
+                  <input data-el="paymentRecipientOverride" name="payment_recipient_override" placeholder="optional 0x..." />
                 </label>
                 <label>IPFS Mode
-                  <select data-el="ipfsMode">
+                  <select data-el="ipfsMode" name="ipfs_mode">
                     <option value="validator">validator-hosted binary (server-side CID)</option>
                     <option value="client">client-provided CID (client-side IPFS)</option>
                   </select>
                 </label>
                 <label>Client CID (if client mode)
-                  <input data-el="clientIpfsCid" placeholder="Qm... or bafy..." />
+                  <input data-el="clientIpfsCid" name="client_ipfs_cid" placeholder="Qm... or bafy..." />
                 </label>
               </div>
               <div class="ocs-dev-endpoint-health">
@@ -1124,15 +1124,19 @@ export function bootContentSupplyChainRuntime(root = document) {
     if (!state.selectedFile) {
       els.writeBtn.disabled = true;
       els.writeBtn.textContent = 'Add content to begin';
+      els.writeBtn.classList.remove('is-propose-ready');
       return;
     }
     if (!state.connectedWallet) {
       els.writeBtn.disabled = false;
       els.writeBtn.textContent = 'Connect Wallet';
+      els.writeBtn.classList.remove('is-propose-ready');
       return;
     }
+    const proposeReady = isPreparedDraftCurrent();
     els.writeBtn.disabled = false;
-    els.writeBtn.textContent = isPreparedDraftCurrent() ? 'I Wish to Propose This' : 'Estimate Proposal Cost';
+    els.writeBtn.textContent = proposeReady ? 'I Wish to Propose This' : 'Estimate Proposal Cost';
+    els.writeBtn.classList.toggle('is-propose-ready', proposeReady);
   };
 
   const getPaymentRecipient = () => {

@@ -119,24 +119,25 @@ function buildNav(fragment) {
 
   const brandLink = brand.querySelector('a');
   if (brandLink && !brandLink.querySelector('.nav-brand-mark')) {
-    brandLink.insertAdjacentHTML('afterbegin', `
+    const label = (brandLink.textContent || '').trim();
+    brandLink.textContent = '';
+    brandLink.classList.add('nav-brand-link');
+    brandLink.insertAdjacentHTML('beforeend', `
       <span class="nav-brand-mark" aria-hidden="true">
-        <svg class="nav-brand-logo" viewBox="0 0 28 28" role="img">
-          <defs>
-            <linearGradient id="navBrandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#7affeb"></stop>
-              <stop offset="100%" stop-color="#9fb6ff"></stop>
-            </linearGradient>
-          </defs>
-          <g fill="none" stroke="url(#navBrandGrad)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="14,2 21,6 21,14 14,18 7,14 7,6"></polygon>
-            <path d="M14 18 L14 25"></path>
-            <path d="M10 22 C11.5 20.5 13 19.8 14 19.6"></path>
-            <path d="M14 20 C15.5 19.8 17.5 20.6 19 22"></path>
+        <svg class="nav-brand-logo" viewBox="0 0 32 32" role="img" focusable="false">
+          <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1.5" y="1.5" width="29" height="29" rx="9" fill="#0f1626" stroke="#2f4063" stroke-width="1.4"></rect>
+            <path d="M9 11.5l7-3.7 7 3.7-7 3.7-7-3.7z" stroke="#74f2dd" stroke-width="1.9"></path>
+            <path d="M9 15.7l7 3.7 7-3.7" stroke="#8fc4ff" stroke-width="1.9"></path>
+            <path d="M9 20l7 3.7 7-3.7" stroke="#9fa2ff" stroke-width="1.9"></path>
           </g>
         </svg>
       </span>
     `);
+    const text = document.createElement('span');
+    text.className = 'nav-brand-text';
+    text.textContent = label;
+    brandLink.append(text);
   }
 
   decorateNavSections(navSections);

@@ -28,12 +28,12 @@ export default function decorate(block) {
       </div>
 
       <div data-ocs-el="drop" class="ocs-dropzone">
-        <input data-ocs-el="file" type="file" class="ocs-file-input" />
+        <input data-ocs-el="file" type="file" name="source_file" class="ocs-file-input" />
         <p class="ocs-drop-title">${cfg.dropLabel || 'Drop PDF / TEXT payload'}</p>
         <p class="ocs-drop-sub">${cfg.dropHint || 'or click to browse'}</p>
       </div>
 
-      <label class="ocs-label" for="ocs-intent">Extraction Intent</label>
+      <p class="ocs-label">Extraction Intent</p>
       <div id="ocs-intent" class="ocs-intent">
         <button type="button" data-intent="quick" class="ocs-intent-btn">Quick</button>
         <button type="button" data-intent="balanced" class="ocs-intent-btn is-active">Balanced</button>

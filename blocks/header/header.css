@@ -47,29 +47,57 @@ header .nav-tools p {
 header .nav-brand a {
   display: inline-flex;
   align-items: center;
-  gap: 0.42rem;
-  border: 1px solid #2f2f2f;
+  gap: 0.5rem;
+  border: 1px solid #2e2e2e;
   border-radius: 999px;
-  padding: 0.34rem 0.82rem;
-  font: 700 0.78rem/1.2 var(--mono-font-family);
-  letter-spacing: 0.06em;
+  padding: 0.3rem 1.05rem 0.3rem 0.36rem;
+  font: 700 0.76rem/1.2 var(--mono-font-family);
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #f2f2f2;
-  background: #121212;
+  color: #f7f8fb;
+  background: linear-gradient(180deg, #151515 0%, #111111 100%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%), 0 6px 20px rgb(0 0 0 / 20%);
+  position: relative;
+  overflow: hidden;
 }
 
 header .nav-brand .nav-brand-mark {
-  width: 16px;
-  height: 16px;
+  width: 22px;
+  height: 22px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border-radius: 8px;
+  background: radial-gradient(circle at 30% 20%, rgb(120 242 221 / 28%), transparent 60%);
+  box-shadow: 0 0 0 1px rgb(109 191 255 / 30%), 0 0 18px rgb(116 242 221 / 20%);
 }
 
 header .nav-brand .nav-brand-logo {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+header .nav-brand .nav-brand-text {
+  display: inline-block;
+  white-space: nowrap;
+  letter-spacing: 0.055em;
+  color: #f4f5f8;
+  text-shadow: 0 0 10px rgb(116 242 221 / 8%);
+}
+
+header .nav-brand a::after {
+  content: '';
+  width: 34px;
+  height: 8px;
+  margin-left: 0.3rem;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgb(121 240 223 / 72%), rgb(158 171 255 / 58%)),
+    linear-gradient(90deg, rgb(255 255 255 / 22%), transparent);
+  opacity: 0.72;
+  box-shadow: 0 0 14px rgb(121 240 223 / 28%);
+  flex: 0 0 auto;
 }
 
 header nav .nav-sections {
