@@ -386,13 +386,19 @@ function summarizeExtractions(normalized) {
   }
   const counts = {};
   extractions.forEach((entry) => {
-    const cls = String(entry?.class || 'unknown');
+    const cls = sanitizeClassLabel(entry?.class);
     counts[cls] = (counts[cls] || 0) + 1;
   });
   const classes = Object.entries(counts)
     .sort((a, b) => b[1] - a[1])
     .map(([name, count]) => `${name}:${count}`);
   return { total: extractions.length, classes };
+}
+
+function sanitizeClassLabel(value) {
+  const raw = String(value || 'unknown').trim();
+  const cleaned = raw.replace(/[,:;]+$/g, '').trim();
+  return cleaned || 'unknown';
 }
 
 const STAGE_HELP = {
@@ -538,6 +544,11 @@ export function bootContentSupplyChainRuntime(root = document) {
     diagSummary: q('diagSummary'),
     diagList: q('diagList'),
     diagHint: q('diagHint'),
+    snapshotFlow: q('snapshotFlow'),
+    snapshotStage: q('snapshotStage'),
+    snapshotEntities: q('snapshotEntities'),
+    snapshotConfidence: q('snapshotConfidence'),
+    snapshotMeter: q('snapshotMeter'),
   };
 
   const required = ['writeBtn', 'drop', 'file', 'steps', 'quoteLabel', 'envelopeSummary', 'envelopeJson', 'txFeed', 'wallet', 'org', 'validatorUrl', 'normalizerUrl', 'devOut'];
@@ -592,6 +603,7 @@ export function bootContentSupplyChainRuntime(root = document) {
 
   const setStatus = (msg) => {
     els.status.textContent = msg;
+    updateRailSnapshot();
   };
 
   const setDev = (data) => {
@@ -599,10 +611,13 @@ export function bootContentSupplyChainRuntime(root = document) {
   };
 
   const renderEnvelopePreview = () => {
+    const insightsCard = els.envelopeSummary?.closest('.ocs-card');
     if (!state.latestEnvelope) {
       els.envelopeSummary.textContent = 'Run estimate to generate an envelope preview from langextract output.';
       els.envelopeEntities.innerHTML = '';
       els.envelopeJson.textContent = '{"status":"awaiting-envelope"}';
+      insightsCard?.classList.remove('has-entities');
+      updateRailSnapshot();
       return;
     }
 
@@ -615,16 +630,70 @@ export function bootContentSupplyChainRuntime(root = document) {
     const classCounts = {};
     if (Array.isArray(extractions)) {
       extractions.forEach((entry) => {
-        const cls = String(entry?.class || 'unknown');
+        const cls = sanitizeClassLabel(entry?.class);
         classCounts[cls] = (classCounts[cls] || 0) + 1;
       });
     }
     const chips = Object.entries(classCounts)
       .sort((a, b) => b[1] - a[1])
-      .map(([cls, count]) => `<p class="ocs-pill">${cls}: ${count}</p>`)
+      .map(([cls, count]) => `<p class="ocs-pill"><span>${cls}</span><strong>${count}</strong></p>`)
       .join('');
     els.envelopeEntities.innerHTML = chips || '<p class="ocs-pill">No extracted entities</p>';
     els.envelopeJson.textContent = pretty(state.latestEnvelope);
+    insightsCard?.classList.toggle('has-entities', Boolean(chips));
+    updateRailSnapshot();
+  };
+
+  const updateRailSnapshot = () => {
+    if (!els.snapshotFlow && !els.snapshotStage && !els.snapshotMeter) return;
+    const orderedStages = ['preflight', 'connect', 'register', 'extract', 'price', 'commit', 'done'];
+    let activeStage = '';
+    let stageLabel = 'Awaiting file';
+    let flowLabel = state.busy ? 'Processing' : 'Ready';
+    let progress = 0;
+
+    for (const key of orderedStages) {
+      if (state.stageState[key] === 'active') {
+        activeStage = key;
+        break;
+      }
+    }
+    if (activeStage) {
+      const help = STAGE_HELP[activeStage];
+      stageLabel = help?.label || activeStage;
+    } else if (state.lastFlowError) {
+      flowLabel = 'Error';
+      stageLabel = STAGE_HELP[state.lastFailedStep]?.label || 'Retry needed';
+    } else if (state.stageState.done === 'done') {
+      flowLabel = 'Committed';
+      stageLabel = STAGE_HELP.done.label;
+    } else if (state.connectedWallet) {
+      stageLabel = state.latestEnvelope ? 'Estimate ready' : 'Ready to estimate';
+    }
+
+    const completedCount = orderedStages.filter((key) => state.stageState[key] === 'done').length;
+    progress = Math.max(progress, Math.round((completedCount / orderedStages.length) * 100));
+    if (activeStage) {
+      const activeIndex = orderedStages.indexOf(activeStage);
+      progress = Math.max(progress, Math.round(((activeIndex + 0.5) / orderedStages.length) * 100));
+    }
+    if (state.lastFlowError) progress = Math.max(progress, 20);
+    if (state.stageState.done === 'done') progress = 100;
+
+    const totalEntities = Array.isArray(state.latestEnvelope?.classification?.extractions)
+      ? state.latestEnvelope.classification.extractions.length
+      : 0;
+    const confidence = state.latestNormalization?.confidence;
+
+    if (els.snapshotFlow) els.snapshotFlow.textContent = flowLabel;
+    if (els.snapshotStage) els.snapshotStage.textContent = stageLabel;
+    if (els.snapshotEntities) els.snapshotEntities.textContent = String(totalEntities);
+    if (els.snapshotConfidence) {
+      els.snapshotConfidence.textContent = confidence === undefined || confidence === null
+        ? 'n/a'
+        : Number(confidence).toFixed(2);
+    }
+    if (els.snapshotMeter) els.snapshotMeter.style.width = `${Math.min(100, Math.max(0, progress))}%`;
   };
 
   const appendFeed = (message, level = 'info') => {
@@ -694,9 +763,11 @@ export function bootContentSupplyChainRuntime(root = document) {
     els.writeBtn.disabled = flag;
     if (flag) {
       els.writeBtn.textContent = 'Processing...';
+      updateRailSnapshot();
       return;
     }
     updatePrimaryAction();
+    updateRailSnapshot();
   };
 
   const currentDraftKey = () => {
@@ -919,6 +990,7 @@ export function bootContentSupplyChainRuntime(root = document) {
       mainEl?.classList.remove('ocs-processing-lx');
     }
     renderDiagnostics();
+    updateRailSnapshot();
   };
 
   const markDone = (name) => {
@@ -928,6 +1000,7 @@ export function bootContentSupplyChainRuntime(root = document) {
       mainEl?.classList.remove('ocs-processing-lx');
     }
     renderDiagnostics();
+    updateRailSnapshot();
   };
 
   const markError = (name) => {
@@ -937,6 +1010,7 @@ export function bootContentSupplyChainRuntime(root = document) {
       mainEl?.classList.remove('ocs-processing-lx');
     }
     renderDiagnostics();
+    updateRailSnapshot();
   };
 
   const emitWalletState = () => {
@@ -972,6 +1046,7 @@ export function bootContentSupplyChainRuntime(root = document) {
       emitWalletState();
       updateQuoteLabelFromCurrent();
       updatePrimaryAction();
+      updateRailSnapshot();
       return;
     }
     const short = `${state.connectedWallet.slice(0, 10)}...${state.connectedWallet.slice(-8)}`;
@@ -992,6 +1067,7 @@ export function bootContentSupplyChainRuntime(root = document) {
     emitWalletState();
     updateQuoteLabelFromCurrent();
     updatePrimaryAction();
+    updateRailSnapshot();
   };
 
   const hydrateWalletMetrics = async () => {
@@ -1020,6 +1096,7 @@ export function bootContentSupplyChainRuntime(root = document) {
       resetPreparedDraft();
       updateQuoteLabelFromCurrent();
       updatePrimaryAction();
+      updateRailSnapshot();
       return;
     }
     const mb = (state.selectedFile.size / (1024 * 1024)).toFixed(2);
@@ -1027,6 +1104,7 @@ export function bootContentSupplyChainRuntime(root = document) {
     resetPreparedDraft();
     updateQuoteLabelFromCurrent();
     updatePrimaryAction();
+    updateRailSnapshot();
   };
 
   const updatePrimaryAction = () => {
@@ -1708,6 +1786,7 @@ export function bootContentSupplyChainRuntime(root = document) {
     resetPreparedDraft();
     updateQuoteLabelFromCurrent();
     updatePrimaryAction();
+    updateRailSnapshot();
   };
 
   const setFile = (file) => {
@@ -1799,6 +1878,7 @@ export function bootContentSupplyChainRuntime(root = document) {
       state.ipfsMode = (els.ipfsMode.value || 'validator').trim().toLowerCase() === 'client' ? 'client' : 'validator';
       resetPreparedDraft();
       updateQuoteLabelFromCurrent();
+      updateRailSnapshot();
     });
   }
 
@@ -1842,6 +1922,7 @@ export function bootContentSupplyChainRuntime(root = document) {
   setIntent(state.selectedIntent);
   updatePrimaryAction();
   updateQuoteLabelFromCurrent();
+  updateRailSnapshot();
   loadRuntimeConfig();
   window.addEventListener('beforeunload', (event) => {
     if (!state.busy) return;

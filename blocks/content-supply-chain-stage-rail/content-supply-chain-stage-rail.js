@@ -48,6 +48,31 @@ export default function decorate(block) {
 
       <button data-ocs-el="writeBtn" class="ocs-btn ocs-btn-primary">${cfg.ctaLabel || 'Connect wallet'}</button>
       <p data-ocs-el="status" class="ocs-status">Ready</p>
+
+      <section class="ocs-rail-snapshot" aria-label="Write run snapshot">
+        <p class="ocs-label ocs-label-tight">Run Snapshot</p>
+        <div class="ocs-rail-snapshot-grid">
+          <div>
+            <span>Flow</span>
+            <strong data-ocs-el="snapshotFlow">Idle</strong>
+          </div>
+          <div>
+            <span>Stage</span>
+            <strong data-ocs-el="snapshotStage">Awaiting file</strong>
+          </div>
+          <div>
+            <span>Entities</span>
+            <strong data-ocs-el="snapshotEntities">0</strong>
+          </div>
+          <div>
+            <span>Confidence</span>
+            <strong data-ocs-el="snapshotConfidence">n/a</strong>
+          </div>
+        </div>
+        <div class="ocs-rail-meter" aria-hidden="true">
+          <span data-ocs-el="snapshotMeter"></span>
+        </div>
+      </section>
     </section>
   `;
 

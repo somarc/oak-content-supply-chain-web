@@ -1,9 +1,65 @@
 .content-supply-chain-insights .ocs-card {
   margin: 0;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(560px 180px at 100% 0%, rgb(255 255 255 / 22%), transparent 62%),
+    linear-gradient(180deg, rgb(239 239 239 / 72%), rgb(228 228 228 / 66%));
+}
+
+.content-supply-chain-insights .ocs-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, #7fe9d4, #9ba5ba);
+  opacity: 0.55;
+}
+
+.content-supply-chain-insights .ocs-card.has-entities::before {
+  opacity: 0.95;
 }
 
 .content-supply-chain-insights .ocs-card + .ocs-card {
   margin-top: 0.8rem;
+}
+
+.content-supply-chain-insights [data-ocs-el="envelopeSummary"],
+.content-supply-chain-insights [data-el="envelopeSummary"] {
+  margin-top: 0.58rem;
+  color: #2e3138;
+}
+
+.content-supply-chain-insights [data-ocs-el="envelopeEntities"],
+.content-supply-chain-insights [data-el="envelopeEntities"] {
+  margin-top: 0.75rem;
+  gap: 0.55rem;
+}
+
+.content-supply-chain-insights [data-ocs-el="envelopeEntities"] .ocs-pill,
+.content-supply-chain-insights [data-el="envelopeEntities"] .ocs-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.46rem;
+  border-color: #838a99;
+  background: rgb(255 255 255 / 66%);
+  color: #252a33;
+  padding-right: 0.56rem;
+}
+
+.content-supply-chain-insights [data-ocs-el="envelopeEntities"] .ocs-pill span,
+.content-supply-chain-insights [data-el="envelopeEntities"] .ocs-pill span {
+  opacity: 0.9;
+}
+
+.content-supply-chain-insights [data-ocs-el="envelopeEntities"] .ocs-pill strong,
+.content-supply-chain-insights [data-el="envelopeEntities"] .ocs-pill strong {
+  border: 1px solid #969baa;
+  border-radius: 999px;
+  background: #f3f4f6;
+  padding: 0.08rem 0.38rem;
+  font-size: 0.64rem;
+  line-height: 1.2;
 }
 
 .content-supply-chain-insights .ocs-success-links {
