@@ -821,6 +821,7 @@ export function bootContentSupplyChainRuntime(root = document) {
     }
     return null;
   };
+  const hasHostedLocalEndpoints = () => Boolean(endpointHint());
   const isNetworkError = (error) => /failed to fetch|networkerror|load failed|network request failed/i.test(
     String(error?.message || error),
   );
@@ -898,6 +899,17 @@ export function bootContentSupplyChainRuntime(root = document) {
   };
 
   const checkEndpoints = async () => {
+    if (hasHostedLocalEndpoints()) {
+      setEndpointHealth('validator', false, 'localhost blocked on hosted page');
+      setEndpointHealth('normalizer', false, 'localhost blocked on hosted page');
+      return {
+        validatorOk: false,
+        normalizerOk: false,
+        validatorErr: 'localhost blocked on hosted page',
+        normalizerErr: 'localhost blocked on hosted page',
+      };
+    }
+
     let validatorOk = false;
     let normalizerOk = false;
     let validatorErr = '';
@@ -1186,6 +1198,15 @@ export function bootContentSupplyChainRuntime(root = document) {
   };
 
   const discoverPaymentTarget = async () => {
+    if (hasHostedLocalEndpoints()) {
+      state.blockchainConfig = null;
+      state.expectedChainId = null;
+      state.discoveredPaymentTarget = null;
+      if (els.networkPill) els.networkPill.textContent = 'offline';
+      if (els.linkPill) els.linkPill.textContent = 'degraded';
+      return;
+    }
+
     const override = (els.paymentRecipientOverride.value || '').trim();
     if (override) {
       state.discoveredPaymentTarget = override;
@@ -1220,6 +1241,18 @@ export function bootContentSupplyChainRuntime(root = document) {
   };
 
   const loadRuntimeConfig = async () => {
+    if (hasHostedLocalEndpoints()) {
+      const hint = endpointHint();
+      setStatus(hint || 'Service endpoints unavailable from hosted page.');
+      if (els.networkPill) els.networkPill.textContent = 'offline';
+      if (els.linkPill) els.linkPill.textContent = 'degraded';
+      setEndpointHealth('validator', false, 'localhost blocked on hosted page');
+      setEndpointHealth('normalizer', false, 'localhost blocked on hosted page');
+      stopQueuePolling();
+      appendFeed('runtime probes skipped (hosted page + localhost endpoints)', 'warn');
+      return;
+    }
+
     let runtimeAvailable = true;
     try {
       const res = await fetch(`${getNormalizerBase()}/v1/runtime-config`);

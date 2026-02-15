@@ -5,6 +5,14 @@ const isDesktop = window.matchMedia('(min-width: 900px)');
 const DEFAULT_VALIDATOR_BASE = 'http://127.0.0.1:8787/ops/v1/content-chain/validator';
 const DEFAULT_NORMALIZER_BASE = 'http://127.0.0.1:8088';
 
+function isHostedPage() {
+  return /\.aem\.(page|live)$/i.test(window.location.hostname);
+}
+
+function isLocalEndpoint(url) {
+  return /127\.0\.0\.1|localhost/i.test(String(url || ''));
+}
+
 function cleanBase(url) {
   return String(url || '').replace(/\/+$/, '');
 }
@@ -243,6 +251,11 @@ function buildNav(fragment) {
 
     const validatorBase = cleanBase(window.localStorage.getItem('ocs.validatorUrl') || DEFAULT_VALIDATOR_BASE);
     const normalizerBase = cleanBase(window.localStorage.getItem('ocs.normalizerUrl') || DEFAULT_NORMALIZER_BASE);
+    if (isHostedPage() && (isLocalEndpoint(validatorBase) || isLocalEndpoint(normalizerBase))) {
+      if (headerNetwork) headerNetwork.textContent = 'offline';
+      if (headerLink) headerLink.textContent = 'degraded';
+      return;
+    }
 
     let validatorOk = false;
     let normalizerOk = false;

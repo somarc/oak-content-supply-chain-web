@@ -138,8 +138,15 @@ async function loadLazy(doc) {
  * without impacting the user experience.
  */
 function loadDelayed() {
+  const load = () => import('./delayed.js');
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(() => {
+      window.setTimeout(load, 1200);
+    }, { timeout: 12000 });
+    return;
+  }
   // eslint-disable-next-line import/no-cycle
-  window.setTimeout(() => import('./delayed.js'), 3000);
+  window.setTimeout(load, 12000);
   // load anything that can be postponed to the latest here
 }
 
