@@ -108,6 +108,10 @@ function generateProposalIdHex() {
   return `0x${Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('')}`;
 }
 
+function resolveWritePaymentTier(ipfsMode) {
+  return ipfsMode === 'validator' ? 'priority' : 'standard';
+}
+
 function describeError(error) {
   if (!error) return 'unknown error';
   if (typeof error === 'string') return error;
@@ -1658,6 +1662,7 @@ export function bootContentSupplyChainRuntime(root = document) {
     let signature;
     const proposalId = generateProposalIdHex();
     state.ipfsMode = (els.ipfsMode?.value || 'validator').trim().toLowerCase() === 'client' ? 'client' : 'validator';
+    const paymentTier = resolveWritePaymentTier(state.ipfsMode);
 
     const paymentRecipient = getPaymentRecipient();
     if (!paymentRecipient || !paymentRecipient.startsWith('0x')) {
@@ -1698,7 +1703,7 @@ export function bootContentSupplyChainRuntime(root = document) {
       clientCid: state.ipfsMode === 'client' ? (els.clientIpfsCid?.value || '').trim() : null,
       envelope: state.latestEnvelope,
       quoteId: state.latestQuote.quoteId,
-      paymentTier: state.ipfsMode === 'validator' ? 'priority' : 'standard',
+      paymentTier,
       timestamp: Date.now(),
       mode: 'live',
     });
@@ -1714,7 +1719,7 @@ export function bootContentSupplyChainRuntime(root = document) {
         walletAddress: wallet,
         message,
         contentType: 'envelope',
-        paymentTier: 'standard',
+        paymentTier,
         ethereumTxHash: paymentTx,
         proposalId,
         ipfsCid: selectedClientCid,
@@ -1731,7 +1736,7 @@ export function bootContentSupplyChainRuntime(root = document) {
       formData.append('walletAddress', wallet);
       formData.append('message', message);
       formData.append('contentType', 'envelope');
-      formData.append('paymentTier', 'priority');
+      formData.append('paymentTier', paymentTier);
       formData.append('ethereumTxHash', paymentTx);
       formData.append('proposalId', proposalId);
       formData.append('signature', signature);
