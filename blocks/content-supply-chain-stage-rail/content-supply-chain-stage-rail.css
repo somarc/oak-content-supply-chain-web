@@ -206,7 +206,7 @@ main.ocs-runtime-page.ocs-processing-lx .section.ocs-insights-section .ocs-card:
 }
 
 main.ocs-runtime-page.ocs-processing-lx .section.ocs-insights-section .ocs-card::after {
-  content: 'LangExtract + envelope mapping in progress';
+  content: 'Oak Ingest Studio + envelope mapping in progress';
   position: absolute;
   left: 22px;
   bottom: 24px;
@@ -538,8 +538,31 @@ main.ocs-runtime-page .section:not(.ocs-stage-rail-section) .ocs-pill {
 
 .ocs-intent {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.42rem;
+}
+
+.ocs-intent-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.52rem;
+}
+
+.ocs-intent-main,
+.ocs-intent-deep-rail {
+  border: 1px solid #393939;
+  border-radius: 10px;
+  background: #0f0f0f;
+  padding: 0.52rem;
+}
+
+.ocs-intent-heading {
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  font-size: 0.57rem;
+  color: #8d8d8d;
+  font-weight: 700;
 }
 
 .ocs-intent-btn,
@@ -556,6 +579,40 @@ main.ocs-runtime-page .section:not(.ocs-stage-rail-section) .ocs-pill {
   transition: transform 130ms ease, filter 130ms ease;
 }
 
+.ocs-intent-deep-rail {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.48rem;
+  width: 100%;
+  border-color: #4a463a;
+  background: #11100d;
+  padding: 0.4rem 0.48rem;
+  opacity: 0.82;
+}
+
+.ocs-intent-btn-deep {
+  width: auto;
+  min-width: 6.2rem;
+  height: 1.86rem;
+  padding: 0 0.62rem;
+  border-color: #5c5748;
+  background: #14120c;
+  font-size: 0.74rem;
+  flex: 0 0 auto;
+}
+
+.ocs-intent-btn-deep:not(.is-active) {
+  color: #cbbf98;
+}
+
+.ocs-intent-deep-rail .ocs-intent-heading {
+  margin: 0;
+  font-size: 0.54rem;
+  letter-spacing: 0.1em;
+  color: #8d866f;
+}
+
 .ocs-intent-btn:hover,
 .ocs-wallet-btn:hover,
 .ocs-btn:hover {
@@ -567,6 +624,13 @@ main.ocs-runtime-page .section:not(.ocs-stage-rail-section) .ocs-pill {
   background: #e0e0e0;
   color: #151515;
   border-color: #a2a2a2;
+}
+
+.ocs-intent-eta {
+  margin: 0.45rem 0 0;
+  color: #cec18f;
+  font-size: 0.78rem;
+  line-height: 1.35;
 }
 
 .ocs-wallet-btn {
@@ -710,6 +774,99 @@ main.ocs-runtime-page .section:not(.ocs-stage-rail-section) .ocs-pill {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
 }
 
+.ocs-envelope-editor {
+  margin-top: 0.72rem;
+  border: 1px solid #989898;
+  border-radius: 10px;
+  background: #ececec;
+  padding: 0.64rem;
+}
+
+.ocs-envelope-editor-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-top: 0.52rem;
+}
+
+.ocs-envelope-editor-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #4a4a4a;
+  font-weight: 700;
+}
+
+.ocs-envelope-editor-grid .ocs-envelope-editor-full {
+  grid-column: 1 / -1;
+}
+
+.ocs-envelope-editor-grid input,
+.ocs-envelope-editor-grid textarea {
+  border: 1px solid #8f8f8f;
+  border-radius: 7px;
+  background: #f5f5f5;
+  color: #111;
+  font-size: 0.79rem;
+  padding: 0.42rem 0.5rem;
+}
+
+.ocs-envelope-editor-grid textarea {
+  min-height: 4.8rem;
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.ocs-envelope-editor-actions {
+  display: flex;
+  gap: 0.45rem;
+  margin-top: 0.58rem;
+}
+
+.ocs-envelope-editor-btn {
+  border: 1px solid #8a8a8a;
+  border-radius: 999px;
+  background: #e6e6e6;
+  color: #121212;
+  height: 1.84rem;
+  padding: 0 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+
+.ocs-envelope-editor-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ocs-envelope-editor-btn-ghost {
+  background: transparent;
+}
+
+.ocs-envelope-edit-status {
+  margin: 0.5rem 0 0;
+  font-size: 0.72rem;
+  color: #4a4a4a;
+}
+
+.ocs-envelope-edit-status.is-ok {
+  color: #1f6b47;
+}
+
+.ocs-envelope-edit-status.is-warn {
+  color: #7a5d1b;
+}
+
+.ocs-envelope-edit-status.is-error {
+  color: #8d2020;
+}
+
 .hidden {
   display: none !important;
 }
@@ -821,6 +978,10 @@ main.ocs-runtime-page .section:not(.ocs-stage-rail-section) .ocs-pill {
 
 @media (width <= 768px) {
   .ocs-intent {
+    grid-template-columns: 1fr;
+  }
+
+  .ocs-envelope-editor-grid {
     grid-template-columns: 1fr;
   }
 

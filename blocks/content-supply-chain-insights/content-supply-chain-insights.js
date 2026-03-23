@@ -18,7 +18,7 @@ export default function decorate(block) {
   block.closest('main')?.classList.add('ocs-runtime-page');
   block.closest('.section')?.classList.add('ocs-runtime-section', 'ocs-insights-section');
   const title = cfg.title || 'Source Document Insights';
-  const emptySummary = cfg.emptySummary || 'Run estimate to generate an envelope preview from langextract output.';
+  const emptySummary = cfg.emptySummary || 'Run estimate to generate an envelope preview from ingestion output.';
 
   block.innerHTML = `
     <section class="ocs-card">

@@ -273,9 +273,32 @@
   font-weight: 700;
 }
 
+.content-supply-chain-app .ocs-intent-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.55rem;
+}
+
+.content-supply-chain-app .ocs-intent-main,
+.content-supply-chain-app .ocs-intent-deep-rail {
+  border: 1px solid var(--ocs-border-strong);
+  border-radius: 10px;
+  padding: 0.55rem;
+  background: #0f0f0f;
+}
+
+.content-supply-chain-app .ocs-intent-heading {
+  margin: 0 0 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.58rem;
+  color: var(--ocs-dim);
+  font-weight: 700;
+}
+
 .content-supply-chain-app .ocs-intent {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.45rem;
 }
 
@@ -290,10 +313,32 @@
   font-size: 0.83rem;
 }
 
+.content-supply-chain-app .ocs-intent-deep-rail {
+  border-color: #5d512f;
+  background: linear-gradient(180deg, #16130b 0%, #120f08 100%);
+}
+
+.content-supply-chain-app .ocs-intent-btn-deep {
+  width: 100%;
+  border-color: #6f5f35;
+  background: #1a1509;
+}
+
+.content-supply-chain-app .ocs-intent-btn-deep:not(.is-active) {
+  color: #e6d6a2;
+}
+
 .content-supply-chain-app .ocs-intent-btn.is-active {
   background: #e0e0e0;
   color: #111;
   border-color: #a1a1a1;
+}
+
+.content-supply-chain-app .ocs-intent-eta {
+  margin: 0.45rem 0 0;
+  color: #cec18f;
+  font-size: 0.78rem;
+  line-height: 1.35;
 }
 
 .content-supply-chain-app .ocs-quote {
@@ -394,6 +439,99 @@
 .content-supply-chain-app .ocs-dev pre,
 .content-supply-chain-app .ocs-ledger-feed ul {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+}
+
+.content-supply-chain-app .ocs-envelope-editor {
+  margin-top: 0.72rem;
+  border: 1px solid #8a8a8a;
+  border-radius: 10px;
+  background: #e3e3e3;
+  padding: 0.64rem;
+}
+
+.content-supply-chain-app .ocs-envelope-editor-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-top: 0.55rem;
+}
+
+.content-supply-chain-app .ocs-envelope-editor-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #4a4a4a;
+  font-weight: 700;
+}
+
+.content-supply-chain-app .ocs-envelope-editor-grid .ocs-envelope-editor-full {
+  grid-column: 1 / -1;
+}
+
+.content-supply-chain-app .ocs-envelope-editor-grid input,
+.content-supply-chain-app .ocs-envelope-editor-grid textarea {
+  border: 1px solid #8f8f8f;
+  border-radius: 7px;
+  background: #f0f0f0;
+  color: #111;
+  font-size: 0.79rem;
+  padding: 0.42rem 0.5rem;
+}
+
+.content-supply-chain-app .ocs-envelope-editor-grid textarea {
+  min-height: 4.8rem;
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.content-supply-chain-app .ocs-envelope-editor-actions {
+  display: flex;
+  gap: 0.45rem;
+  margin-top: 0.58rem;
+}
+
+.content-supply-chain-app .ocs-envelope-editor-btn {
+  border: 1px solid #7b7b7b;
+  border-radius: 999px;
+  background: #dfdfdf;
+  color: #141414;
+  height: 1.84rem;
+  padding: 0 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+
+.content-supply-chain-app .ocs-envelope-editor-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.content-supply-chain-app .ocs-envelope-editor-btn-ghost {
+  background: transparent;
+}
+
+.content-supply-chain-app .ocs-envelope-edit-status {
+  margin: 0.5rem 0 0;
+  font-size: 0.72rem;
+  color: #4a4a4a;
+}
+
+.content-supply-chain-app .ocs-envelope-edit-status.is-ok {
+  color: #1f6b47;
+}
+
+.content-supply-chain-app .ocs-envelope-edit-status.is-warn {
+  color: #7a5d1b;
+}
+
+.content-supply-chain-app .ocs-envelope-edit-status.is-error {
+  color: #8d2020;
 }
 
 .content-supply-chain-app .ocs-success-grid code {
@@ -704,7 +842,8 @@
 
   .content-supply-chain-app .ocs-technical-grid,
   .content-supply-chain-app .ocs-success-grid,
-  .content-supply-chain-app .ocs-dev-grid {
+  .content-supply-chain-app .ocs-dev-grid,
+  .content-supply-chain-app .ocs-envelope-editor-grid {
     grid-template-columns: 1fr;
   }
 }

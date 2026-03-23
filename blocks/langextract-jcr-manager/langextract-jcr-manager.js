@@ -80,7 +80,7 @@ function template() {
       <aside class="ljm-sidebar">
         <div class="ljm-brand">
           <div class="ljm-star-icon"></div>
-          <span>LANGEXTRACT</span>
+          <span>OAK INGEST STUDIO</span>
         </div>
 
         <button class="ljm-drop-zone" type="button">

@@ -34,12 +34,21 @@ export default function decorate(block) {
       </div>
 
       <p class="ocs-label">Extraction Intent</p>
-      <div id="ocs-intent" class="ocs-intent">
-        <button type="button" data-intent="quick" class="ocs-intent-btn">Quick</button>
-        <button type="button" data-intent="balanced" class="ocs-intent-btn is-active">Balanced</button>
-        <button type="button" data-intent="deep" class="ocs-intent-btn">Deep</button>
+      <div class="ocs-intent-layout">
+        <div class="ocs-intent-main">
+          <p class="ocs-intent-heading">Recommended</p>
+          <div id="ocs-intent" class="ocs-intent">
+            <button type="button" data-intent="quick" class="ocs-intent-btn">Quick</button>
+            <button type="button" data-intent="balanced" class="ocs-intent-btn is-active">Balanced</button>
+          </div>
+        </div>
+        <div class="ocs-intent-deep-rail">
+          <p class="ocs-intent-heading">Deep Analysis</p>
+          <button type="button" data-intent="deep" class="ocs-intent-btn ocs-intent-btn-deep">Deep</button>
+        </div>
       </div>
       <p class="ocs-muted" data-ocs-el="intentSummary">Balanced depth with strong metadata and hierarchy extraction.</p>
+      <p class="ocs-intent-eta" data-ocs-el="intentEta">Typical runtime: 1 to 3 minutes for medium files.</p>
 
       <div class="ocs-quote">
         <span>${cfg.quoteLabel || 'Estimated Proposal Cost'}</span>

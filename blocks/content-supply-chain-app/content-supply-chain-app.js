@@ -150,6 +150,27 @@ function safeNumber(value, fallback = null) {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function getObjectPath(root, path) {
+  let node = root;
+  for (const key of path) {
+    if (!node || typeof node !== 'object') return '';
+    node = node[key];
+  }
+  return typeof node === 'string' ? node : '';
+}
+
+function setObjectPath(root, path, value) {
+  if (!root || typeof root !== 'object' || !Array.isArray(path) || path.length === 0) return;
+  let node = root;
+  for (let i = 0; i < path.length - 1; i += 1) {
+    const key = path[i];
+    const next = node[key];
+    if (!next || typeof next !== 'object' || Array.isArray(next)) node[key] = {};
+    node = node[key];
+  }
+  node[path[path.length - 1]] = value;
+}
+
 function guessEthUsdPrice(config) {
   const candidate = safeNumber(
     config?.ethUsd
@@ -179,7 +200,7 @@ function template() {
     <section class="ocs-shell">
       <header class="ocs-toolbar">
         <div class="ocs-brand">
-          <p class="ocs-brand-title">LANGEXTRACT</p>
+          <p class="ocs-brand-title">OAK INGEST STUDIO</p>
           <p class="ocs-brand-sub">content supply chain control room</p>
         </div>
         <div class="ocs-toolbar-right">
@@ -224,12 +245,21 @@ function template() {
           </div>
 
           <p class="ocs-label">Extraction Intent</p>
-          <div id="ocs-intent" class="ocs-intent">
-            <button type="button" data-intent="quick" class="ocs-intent-btn">Quick</button>
-            <button type="button" data-intent="balanced" class="ocs-intent-btn is-active">Balanced</button>
-            <button type="button" data-intent="deep" class="ocs-intent-btn">Deep</button>
+          <div class="ocs-intent-layout">
+            <div class="ocs-intent-main">
+              <p class="ocs-intent-heading">Recommended</p>
+              <div id="ocs-intent" class="ocs-intent">
+                <button type="button" data-intent="quick" class="ocs-intent-btn">Quick</button>
+                <button type="button" data-intent="balanced" class="ocs-intent-btn is-active">Balanced</button>
+              </div>
+            </div>
+            <div class="ocs-intent-deep-rail">
+              <p class="ocs-intent-heading">Deep Analysis</p>
+              <button type="button" data-intent="deep" class="ocs-intent-btn ocs-intent-btn-deep">Deep</button>
+            </div>
           </div>
           <p class="ocs-muted" data-el="intentSummary">Balanced depth with strong metadata and hierarchy extraction.</p>
+          <p class="ocs-intent-eta" data-el="intentEta">Typical runtime: 1 to 3 minutes for medium files.</p>
 
           <div class="ocs-quote">
             <span>Estimated Proposal Cost</span>
@@ -242,12 +272,34 @@ function template() {
         <section class="ocs-main-canvas">
           <section class="ocs-card ocs-primary">
             <h3>Source Document Insights</h3>
-            <p data-el="envelopeSummary" class="ocs-muted">Run estimate to generate an envelope preview from langextract output.</p>
+            <p data-el="envelopeSummary" class="ocs-muted">Run estimate to generate an envelope preview from ingestion output.</p>
             <div data-el="envelopeEntities" class="ocs-meta-strip"></div>
           </section>
 
           <section class="ocs-card ocs-envelope">
             <h3>Repository Mapping: JCR Envelope</h3>
+            <div class="ocs-envelope-editor">
+              <p class="ocs-muted">JSON structure is locked. Edit only safe text fields.</p>
+              <div class="ocs-envelope-editor-grid">
+                <label>Document Title
+                  <input data-el="envelopeEditTitle" maxlength="180" placeholder="Title" />
+                </label>
+                <label>Document Language
+                  <input data-el="envelopeEditLanguage" maxlength="12" placeholder="en" />
+                </label>
+                <label class="ocs-envelope-editor-full">Source URI
+                  <input data-el="envelopeEditSourceUri" maxlength="1000" placeholder="https://example.org/source" />
+                </label>
+                <label class="ocs-envelope-editor-full">Document Summary
+                  <textarea data-el="envelopeEditSummary" maxlength="2000" rows="3" placeholder="Summary"></textarea>
+                </label>
+              </div>
+              <div class="ocs-envelope-editor-actions">
+                <button type="button" data-el="envelopeApplyBtn" class="ocs-envelope-editor-btn">Apply text edits</button>
+                <button type="button" data-el="envelopeResetBtn" class="ocs-envelope-editor-btn ocs-envelope-editor-btn-ghost">Reset fields</button>
+              </div>
+              <p data-el="envelopeEditStatus" class="ocs-envelope-edit-status">No envelope loaded yet.</p>
+            </div>
             <pre data-el="envelopeJson" class="ocs-envelope-json">{"status":"awaiting-envelope"}</pre>
           </section>
 
@@ -364,18 +416,21 @@ const INTENTS = {
     promptProfile: 'metadata-quick',
     priceMultiplier: 0.85,
     summary: 'Fast pass with lightweight metadata and ownership envelope.',
+    eta: 'Typical runtime: under 1 minute for small to medium files.',
   },
   balanced: {
     depth: 'L2',
     promptProfile: 'assets-metadata-hierarchy',
     priceMultiplier: 1,
     summary: 'Balanced depth with strong metadata and hierarchy extraction.',
+    eta: 'Typical runtime: 1 to 3 minutes for medium files.',
   },
   deep: {
     depth: 'L3',
     promptProfile: 'deep-graph-analysis',
     priceMultiplier: 1.35,
-    summary: 'Deep extraction for richer contextual graph data.',
+    summary: 'Deep extraction for richer contextual graph data. Better fidelity, slower turnaround.',
+    eta: 'Longer run time: typically 4 to 8 minutes, longer on dense or large documents.',
   },
 };
 
@@ -498,6 +553,7 @@ export function bootContentSupplyChainRuntime(root = document) {
     stageState: {},
     lastFlowError: '',
     lastFailedStep: '',
+    envelopeEditorBoundTo: null,
   };
 
   const q = (name) => scope.querySelector(`[data-ocs-el="${name}"], [data-el="${name}"]`);
@@ -531,6 +587,14 @@ export function bootContentSupplyChainRuntime(root = document) {
     statusLink: q('statusLink'),
     writeState: q('writeState'),
     intentSummary: q('intentSummary'),
+    intentEta: q('intentEta'),
+    envelopeEditTitle: q('envelopeEditTitle'),
+    envelopeEditSummary: q('envelopeEditSummary'),
+    envelopeEditSourceUri: q('envelopeEditSourceUri'),
+    envelopeEditLanguage: q('envelopeEditLanguage'),
+    envelopeApplyBtn: q('envelopeApplyBtn'),
+    envelopeResetBtn: q('envelopeResetBtn'),
+    envelopeEditStatus: q('envelopeEditStatus'),
     devOut: q('devOut'),
     wallet: q('wallet'),
     org: q('org'),
@@ -610,13 +674,85 @@ export function bootContentSupplyChainRuntime(root = document) {
     els.devOut.textContent = pretty(data);
   };
 
+  const setEnvelopeEditStatus = (message, tone = 'info') => {
+    if (!els.envelopeEditStatus) return;
+    els.envelopeEditStatus.textContent = message;
+    els.envelopeEditStatus.classList.remove('is-ok', 'is-warn', 'is-error');
+    if (tone === 'ok') els.envelopeEditStatus.classList.add('is-ok');
+    if (tone === 'warn') els.envelopeEditStatus.classList.add('is-warn');
+    if (tone === 'error') els.envelopeEditStatus.classList.add('is-error');
+  };
+
+  const syncEnvelopeEditor = (force = false) => {
+    const inputs = [els.envelopeEditTitle, els.envelopeEditSummary, els.envelopeEditSourceUri, els.envelopeEditLanguage].filter(Boolean);
+    const buttons = [els.envelopeApplyBtn, els.envelopeResetBtn].filter(Boolean);
+    if (inputs.length === 0) return;
+
+    const hasEnvelope = Boolean(state.latestEnvelope);
+    inputs.forEach((input) => {
+      input.disabled = !hasEnvelope;
+    });
+    buttons.forEach((button) => {
+      button.disabled = !hasEnvelope;
+    });
+
+    if (!hasEnvelope) {
+      inputs.forEach((input) => {
+        input.value = '';
+      });
+      state.envelopeEditorBoundTo = null;
+      setEnvelopeEditStatus('No envelope loaded yet.');
+      return;
+    }
+
+    if (!force && state.envelopeEditorBoundTo === state.latestEnvelope) return;
+
+    if (els.envelopeEditTitle) els.envelopeEditTitle.value = getObjectPath(state.latestEnvelope, ['document', 'title']);
+    if (els.envelopeEditSummary) els.envelopeEditSummary.value = getObjectPath(state.latestEnvelope, ['document', 'summary']);
+    if (els.envelopeEditSourceUri) els.envelopeEditSourceUri.value = getObjectPath(state.latestEnvelope, ['source', 'uri']);
+    if (els.envelopeEditLanguage) els.envelopeEditLanguage.value = getObjectPath(state.latestEnvelope, ['document', 'language']);
+    state.envelopeEditorBoundTo = state.latestEnvelope;
+    setEnvelopeEditStatus('Safe text fields ready. JSON structure remains locked.');
+  };
+
+  const applyEnvelopeSafeEdits = () => {
+    if (!state.latestEnvelope) {
+      setEnvelopeEditStatus('Run estimate first to load an envelope.', 'warn');
+      return;
+    }
+    const nextTitle = String(els.envelopeEditTitle?.value || '').trim();
+    const nextSummary = String(els.envelopeEditSummary?.value || '').trim();
+    const nextSourceUri = String(els.envelopeEditSourceUri?.value || '').trim();
+    const nextLanguage = String(els.envelopeEditLanguage?.value || '').trim().toLowerCase();
+
+    if (nextLanguage && !/^[a-z]{2,8}(-[a-z0-9]{2,8})?$/.test(nextLanguage)) {
+      setEnvelopeEditStatus('Language should use BCP-47 style tags (for example: en or en-us).', 'error');
+      return;
+    }
+
+    setObjectPath(state.latestEnvelope, ['document', 'title'], nextTitle);
+    setObjectPath(state.latestEnvelope, ['document', 'summary'], nextSummary);
+    setObjectPath(state.latestEnvelope, ['source', 'uri'], nextSourceUri);
+    setObjectPath(state.latestEnvelope, ['document', 'language'], nextLanguage);
+    state.envelopeEditorBoundTo = null;
+    renderEnvelopePreview();
+    setEnvelopeEditStatus('Applied safe text edits to envelope draft.', 'ok');
+    appendFeed('safe envelope text edits applied', 'ok');
+  };
+
+  const markEnvelopeEditsDirty = () => {
+    if (!state.latestEnvelope) return;
+    setEnvelopeEditStatus('Unapplied safe text edits.', 'warn');
+  };
+
   const renderEnvelopePreview = () => {
     const insightsCard = els.envelopeSummary?.closest('.ocs-card');
     if (!state.latestEnvelope) {
-      els.envelopeSummary.textContent = 'Run estimate to generate an envelope preview from langextract output.';
+      els.envelopeSummary.textContent = 'Run estimate to generate an envelope preview from ingestion output.';
       els.envelopeEntities.innerHTML = '';
       els.envelopeJson.textContent = '{"status":"awaiting-envelope"}';
       insightsCard?.classList.remove('has-entities');
+      syncEnvelopeEditor();
       updateRailSnapshot();
       return;
     }
@@ -641,6 +777,7 @@ export function bootContentSupplyChainRuntime(root = document) {
     els.envelopeEntities.innerHTML = chips || '<p class="ocs-pill">No extracted entities</p>';
     els.envelopeJson.textContent = pretty(state.latestEnvelope);
     insightsCard?.classList.toggle('has-entities', Boolean(chips));
+    syncEnvelopeEditor();
     updateRailSnapshot();
   };
 
@@ -1471,11 +1608,11 @@ export function bootContentSupplyChainRuntime(root = document) {
       const extractionSummary = summarizeExtractions(normalized);
       if (extractionSummary.total > 0) {
         appendFeed(
-          `langextract confidence ${normalized.confidence} | ${extractionSummary.total} entities (${extractionSummary.classes.join(', ')})`,
+          `ingest extraction confidence ${normalized.confidence} | ${extractionSummary.total} entities (${extractionSummary.classes.join(', ')})`,
           'ok',
         );
       } else {
-        appendFeed(`langextract returned no entities (confidence ${normalized.confidence})`, 'warn');
+        appendFeed(`ingest extraction returned no entities (confidence ${normalized.confidence})`, 'warn');
       }
 
       setDev({
@@ -1817,6 +1954,7 @@ export function bootContentSupplyChainRuntime(root = document) {
     state.selectedIntent = intent;
     const cfg = INTENTS[intent];
     els.intentSummary.textContent = cfg.summary;
+    if (els.intentEta) els.intentEta.textContent = cfg.eta;
     root.querySelectorAll('.ocs-intent-btn').forEach((btn) => {
       btn.classList.toggle('is-active', btn.getAttribute('data-intent') === intent);
     });
@@ -1901,6 +2039,21 @@ export function bootContentSupplyChainRuntime(root = document) {
     });
   });
 
+  if (els.envelopeApplyBtn) {
+    els.envelopeApplyBtn.addEventListener('click', applyEnvelopeSafeEdits);
+  }
+  if (els.envelopeResetBtn) {
+    els.envelopeResetBtn.addEventListener('click', () => {
+      syncEnvelopeEditor(true);
+      setEnvelopeEditStatus('Safe fields reset to current envelope values.');
+    });
+  }
+  [els.envelopeEditTitle, els.envelopeEditSummary, els.envelopeEditSourceUri, els.envelopeEditLanguage]
+    .filter(Boolean)
+    .forEach((input) => {
+      input.addEventListener('input', markEnvelopeEditsDirty);
+    });
+
   [els.validatorUrl, els.normalizerUrl, els.paymentRecipientOverride].filter(Boolean).forEach((input) => {
     input.addEventListener('change', async () => {
       stopStatusPolling();
@@ -1959,6 +2112,7 @@ export function bootContentSupplyChainRuntime(root = document) {
   setIntent(state.selectedIntent);
   updatePrimaryAction();
   updateQuoteLabelFromCurrent();
+  syncEnvelopeEditor(true);
   updateRailSnapshot();
   loadRuntimeConfig();
   window.addEventListener('beforeunload', (event) => {
